@@ -5,8 +5,8 @@ import './player.js';
 
 const PAGES = [
     { path: '/biblioteca', module: () => import('./biblioteca.js'), header: true },
-    { path: '/explorar',   module: () => import('./explorar.js'),   header: true },
-    { path: '/buscar',     module: () => import('./buscar.js'),     header: true }
+    { path: '/explorar', module: () => import('./explorar.js'), header: true },
+    { path: '/buscar', module: () => import('./buscar.js'), header: true }
 ];
 
 let lastScrollTop = 0;
@@ -40,7 +40,6 @@ async function router() {
     const container = document.getElementById('content');
 
     try {
-        // Reset scroll
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         if (path === '/') {
@@ -55,7 +54,6 @@ async function router() {
             const aleatorios = [...DATA].sort(() => 0.5 - Math.random()).slice(0, 10);
             const combined = [...new Set([...recientes, ...aleatorios])];
 
-            // Renderizamos grid con botón de cerrar
             container.innerHTML = `
                 <div class="mb-6 flex items-center justify-between">
                     <h1 class="text-2xl font-bold">Novedades y Recomendaciones</h1>
@@ -73,7 +71,6 @@ async function router() {
             document.title = 'Novedades · Balta Media';
             toggleHeaderAndCategories(true);
 
-            // Listener para cerrar
             document.getElementById('closeNovedadesBtn')?.addEventListener('click', (e) => {
                 e.preventDefault();
                 window.history.pushState(null, null, '/');
@@ -81,7 +78,6 @@ async function router() {
             });
         }
 
-        // Resto de rutas (mismo comportamiento que antes)
         else {
             const page = PAGES.find(p => p.path === path);
             if (page) {
@@ -102,7 +98,7 @@ async function router() {
                 if (buscarModule.renderCategory) {
                     buscarModule.renderCategory(container, cat);
                 } else {
-                    const categoryEpisodes = DATA.filter(ep => ep.categories?.includes(cat));
+                    const categoryEpisodes = DATA.filter(ep => ep.categories && ep.categories.includes(cat));
                     renderGrid(container, categoryEpisodes, cat);
                 }
                 document.title = `${cat} · Balta Media`;
@@ -120,8 +116,6 @@ async function router() {
                         renderEpisodio(container, episodio.id);
                         document.title = `${episodio.title} · Balta Media`;
                         toggleHeaderAndCategories(true);
-                    } else if (path === '/novedades') {
-                        // Ya manejado arriba
                     } else {
                         const module404 = await import('./404.js');
                         module404.render(container);
@@ -160,47 +154,62 @@ async function router() {
     }
 }
 
-// Navegación SPA
+// Navegación SPA con enlaces data-link
 document.addEventListener('click', e => {
     const link = e.target.closest('a[data-link]');
     if (link) {
         e.preventDefault();
         const href = link.getAttribute('href');
-        if (href && !href.startsWith('http') && !href.startsWith('#')) {
+        if (href && !href.startsWith('http')) {
             window.history.pushState(null, null, href);
             router();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         } else if (href) {
             window.open(href, '_blank');
         }
     }
 });
 
-// Manejo de popstate (atrás/adelante del navegador)
+// Cerrar búsqueda
+document.addEventListener('click', e => {
+    if (e.target.closest('#closeGridBtn')) {
+        e.preventDefault();
+        window.history.pushState(null, null, '/');
+        router();
+    }
+});
+
 window.addEventListener('popstate', router);
 
-// Ocultar header al hacer scroll hacia abajo
+// Ocultar header al hacer scroll
 window.addEventListener('scroll', () => {
     const st = window.pageYOffset || document.documentElement.scrollTop;
-    const header = document.getElementById('main-header');
-    if (!header) return;
-
-    if (st > lastScrollTop && st > 120) {
-        header.classList.add('hidden');
+    const topHeader = document.getElementById('main-header');
+    const categoryFilters = document.getElementById('category-filters');
+    if (!topHeader || !categoryFilters) return;
+    if (st > lastScrollTop && st > 100) {
+        topHeader.classList.add('hidden');
+        categoryFilters.classList.add('hidden');
     } else {
-        header.classList.remove('hidden');
+        topHeader.classList.remove('hidden');
+        categoryFilters.classList.remove('hidden');
     }
     lastScrollTop = st <= 0 ? 0 : st;
 });
 
-// Observer para cambios dinámicos
+// Observer para cambios en contenido
 const observer = new MutationObserver(() => {
     if (window.sidebarAPI) window.sidebarAPI.setActive();
     if (window.updatePlayerVisibility) window.updatePlayerVisibility();
 });
 const content = document.getElementById('content');
-if (content) observer.observe(content, { childList: true, subtree: true });
+if (content) {
+    observer.observe(content, { childList: true, subtree: true, attributes: false });
+}
+
+// Exponer router globalmente para que la sidebar lo pueda usar
+window.router = router;
 
 // Inicializar
 router();
-
-console.log('✅ Main.js con SPA para novedades');
+console.log('✅ Main.js optimizado con SPA completo');
