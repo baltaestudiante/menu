@@ -20,64 +20,21 @@ function updateActiveCategory() {
     renderCategoryPills(activeCat);
 }
 
-function toggleHeaderAndCategories(show = true) {
-    const header = document.getElementById('main-header');
-    const categoryFilters = document.getElementById('category-filters');
-    if (!header || !categoryFilters) return;
-
-    if (show) {
-        header.classList.remove('hidden');
-        categoryFilters.classList.remove('hidden');
-    } else {
-        header.classList.add('hidden');
-        categoryFilters.classList.add('hidden');
-    }
-}
-
 async function router() {
     const path = window.location.pathname;
     const searchParams = new URLSearchParams(window.location.search);
     const container = document.getElementById('content');
+    const header = document.getElementById('main-header');
+    const categoryFilters = document.getElementById('category-filters');
 
     try {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Forzar visibilidad inicial de la barra de categorías (por si acaso)
+        if (categoryFilters) categoryFilters.classList.remove('hidden');
 
         if (path === '/') {
             renderFeed(container);
             document.title = 'Balta Media · Conocimiento en acción';
-            toggleHeaderAndCategories(true);
         }
-
-        else if (path === '/novedades') {
-            const sorted = [...DATA].sort((a, b) => new Date(b.date) - new Date(a.date));
-            const recientes = sorted.slice(0, 20);
-            const aleatorios = [...DATA].sort(() => 0.5 - Math.random()).slice(0, 10);
-            const combined = [...new Set([...recientes, ...aleatorios])];
-
-            container.innerHTML = `
-                <div class="mb-6 flex items-center justify-between">
-                    <h1 class="text-2xl font-bold">Novedades y Recomendaciones</h1>
-                    <button id="closeNovedadesBtn" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm font-medium transition">
-                        Volver al inicio
-                    </button>
-                </div>
-            `;
-            const gridContainer = document.createElement('div');
-            gridContainer.id = 'novedades-grid';
-            container.appendChild(gridContainer);
-
-            renderGrid(gridContainer, combined, '');
-
-            document.title = 'Novedades · Balta Media';
-            toggleHeaderAndCategories(true);
-
-            document.getElementById('closeNovedadesBtn')?.addEventListener('click', (e) => {
-                e.preventDefault();
-                window.history.pushState(null, null, '/');
-                router();
-            });
-        }
-
         else {
             const page = PAGES.find(p => p.path === path);
             if (page) {
@@ -90,7 +47,6 @@ async function router() {
                     module.render(container);
                 }
                 document.title = `${path.slice(1).charAt(0).toUpperCase() + path.slice(2)} · Balta Media`;
-                toggleHeaderAndCategories(page.header !== false);
             }
             else if (path.startsWith('/categoria/')) {
                 const cat = decodeURIComponent(path.replace('/categoria/', ''));
@@ -102,25 +58,30 @@ async function router() {
                     renderGrid(container, categoryEpisodes, cat);
                 }
                 document.title = `${cat} · Balta Media`;
-                toggleHeaderAndCategories(true);
             }
             else {
                 const serie = getSerieByUrl(path);
                 if (serie) {
                     renderSerie(container, path);
                     document.title = `${serie.titulo_serie} · Balta Media`;
-                    toggleHeaderAndCategories(true);
                 } else {
                     const episodio = getEpisodioByDetailUrl(path);
                     if (episodio) {
                         renderEpisodio(container, episodio.id);
                         document.title = `${episodio.title} · Balta Media`;
-                        toggleHeaderAndCategories(true);
-                    } else {
+                    }
+                    else if (path === '/novedades') {
+                        const sorted = [...DATA].sort((a, b) => new Date(b.date) - new Date(a.date));
+                        const recientes = sorted.slice(0, 20);
+                        const aleatorios = [...DATA].sort(() => 0.5 - Math.random()).slice(0, 10);
+                        const combined = [...new Set([...recientes, ...aleatorios])];
+                        renderGrid(container, combined, 'Novedades y Recomendaciones');
+                        document.title = 'Novedades · Balta Media';
+                    }
+                    else {
                         const module404 = await import('./404.js');
                         module404.render(container);
                         document.title = 'Página no encontrada · Balta Media';
-                        toggleHeaderAndCategories(module404.header !== false);
                     }
                 }
             }
@@ -181,18 +142,16 @@ document.addEventListener('click', e => {
 
 window.addEventListener('popstate', router);
 
-// Ocultar header al hacer scroll
+// Ocultar SOLO el header al hacer scroll (la barra de categorías queda fija siempre)
 window.addEventListener('scroll', () => {
     const st = window.pageYOffset || document.documentElement.scrollTop;
-    const topHeader = document.getElementById('main-header');
-    const categoryFilters = document.getElementById('category-filters');
-    if (!topHeader || !categoryFilters) return;
+    const header = document.getElementById('main-header');
+    if (!header) return;
+
     if (st > lastScrollTop && st > 100) {
-        topHeader.classList.add('hidden');
-        categoryFilters.classList.add('hidden');
+        header.classList.add('hidden');
     } else {
-        topHeader.classList.remove('hidden');
-        categoryFilters.classList.remove('hidden');
+        header.classList.remove('hidden');
     }
     lastScrollTop = st <= 0 ? 0 : st;
 });
@@ -207,9 +166,9 @@ if (content) {
     observer.observe(content, { childList: true, subtree: true, attributes: false });
 }
 
-// Exponer router globalmente para que la sidebar lo pueda usar
+// Exponer router para que la sidebar lo pueda usar en SPA
 window.router = router;
 
 // Inicializar
 router();
-console.log('✅ Main.js optimizado con SPA completo');
+console.log('✅ Main.js optimizado - solo header se oculta con scroll');
