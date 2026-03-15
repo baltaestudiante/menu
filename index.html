@@ -14,7 +14,7 @@
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="/styles.css">
    
-    <!-- ESTILOS BASE - SIDEBAR STICKY -->
+    <!-- ESTILOS BASE - SIDEBAR STICKY + HEADER Y CATEGORÍAS COMO EN ORIGINAL -->
     <style id="sidebar-base-styles">
         * {
             box-sizing: border-box;
@@ -37,7 +37,7 @@
                 "sidebar categories"
                 "sidebar content";
         }
-        /* SIDEBAR – sticky real + scroll interno */
+        /* SIDEBAR – siempre visible, sticky vertical, scroll interno */
         .sidebar-desktop {
             grid-area: sidebar;
             background: #0F0F0F;
@@ -145,35 +145,17 @@
             flex-shrink: 0;
         }
         .sidebar-rec-item-info { flex: 1; min-width: 0; }
-        .sidebar-rec-item-title {
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .sidebar-rec-item-author {
-            font-size: 11px;
-            opacity: 0.7;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        .sidebar-rec-item-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sidebar-rec-item-author { font-size: 11px; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sidebar-rec-play-btn {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: none; border: none; color: white; cursor: pointer; padding: 4px 8px;
+            border-radius: 4px; display: flex; align-items: center; justify-content: center;
             transition: background 0.2s;
         }
         .sidebar-rec-play-btn:hover { background: rgba(255,255,255,0.2); }
         .sidebar-rec-play-btn svg { width: 18px; height: 18px; fill: white; }
 
-        /* HEADER */
+        /* HEADER – se oculta con scroll */
         #main-header {
             grid-area: header;
             position: sticky;
@@ -190,7 +172,7 @@
             pointer-events: none;
         }
 
-        /* BARRA DE CATEGORÍAS */
+        /* BARRA DE CATEGORÍAS – SIEMPRE VISIBLE (como en tu original) */
         #category-filters {
             grid-area: categories;
             position: sticky;
@@ -199,12 +181,9 @@
             backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(255,255,255,0.05);
             z-index: 40;
-            transition: opacity 0.3s ease, transform 0.3s ease;
         }
-        #category-filters.hidden {
-            opacity: 0;
-            transform: translateY(-100%);
-            pointer-events: none;
+        #category-filters > div {
+            padding: 0.5rem 1rem;
         }
 
         /* CONTENEDOR PRINCIPAL */
@@ -246,7 +225,7 @@
     </div>
 </header>
 
-<!-- Barra de categorías -->
+<!-- Barra de categorías – SIEMPRE VISIBLE -->
 <div id="category-filters">
     <div class="overflow-x-auto no-scrollbar">
         <div class="flex items-center gap-2 sm:gap-3" id="category-pills"></div>
@@ -256,7 +235,7 @@
 <!-- Contenedor principal -->
 <main id="content"></main>
 
-<!-- Reproductor flotante (se inyecta vía player.js) -->
+<!-- Reproductor flotante -->
 <div id="floating-player" class="fixed bottom-0 left-0 right-0 bg-[#1a1a1a] border-t border-[#333] p-3 flex items-center justify-between z-[10000] backdrop-blur hidden">
     <!-- El contenido lo genera player.js -->
 </div>
