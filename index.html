@@ -14,7 +14,7 @@
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="/styles.css">
    
-    <!-- ESTILOS BASE - SIDEBAR STICKY + HEADER Y CATEGORÍAS COMO EN ORIGINAL -->
+    <!-- ESTILOS BASE - SIDEBAR FIJA + SCROLL INTERNO -->
     <style id="sidebar-base-styles">
         * {
             box-sizing: border-box;
@@ -37,7 +37,8 @@
                 "sidebar categories"
                 "sidebar content";
         }
-        /* SIDEBAR – siempre visible, sticky vertical, scroll interno */
+
+        /* SIDEBAR – FIJA EN PANTALLA, SIEMPRE VISIBLE, SCROLL PROPIO */
         .sidebar-desktop {
             grid-area: sidebar;
             background: #0F0F0F;
@@ -45,15 +46,17 @@
             z-index: 900;
             position: sticky;
             top: 0;
-            height: 100vh;
+            height: 100vh;               /* ocupa toda la altura de la ventana */
             overflow-x: hidden;
-            overflow-y: auto;
+            overflow-y: auto;            /* scroll interno si hay mucho contenido */
             box-shadow: 2px 0 5px rgba(0,0,0,0.5);
             scrollbar-width: none;
             transition: width 0.3s ease;
             width: 70px;
             min-width: 70px;
         }
+        .sidebar-desktop::-webkit-scrollbar { display: none; }
+
         .sidebar-desktop.expanded {
             width: 220px;
             min-width: 220px;
@@ -64,10 +67,11 @@
                 min-width: 250px;
             }
         }
-        .sidebar-desktop::-webkit-scrollbar { display: none; }
+
         @media (max-width: 768px) {
             .sidebar-desktop { display: none !important; }
         }
+
         .sidebar-toggle {
             display: flex;
             justify-content: flex-end;
@@ -78,6 +82,7 @@
         }
         .sidebar-toggle svg { width: 24px; height: 24px; fill: white; transition: transform 0.2s; }
         .sidebar-desktop.expanded .sidebar-toggle svg { transform: rotate(180deg); }
+
         .sidebar-nav {
             display: flex;
             flex-direction: column;
@@ -102,6 +107,7 @@
         .sidebar-nav-item span { font-size: 14px; font-weight: 500; }
         .sidebar-desktop:not(.expanded) .sidebar-nav-item span { display: none; }
         .sidebar-desktop:not(.expanded) .sidebar-rec-section { display: none; }
+
         .sidebar-rec-section {
             padding: 0 8px;
             margin-top: 20px;
@@ -128,6 +134,7 @@
         }
         .sidebar-rec-header svg { width: 16px; height: 16px; fill: white; }
         .sidebar-rec-list { display: flex; flex-direction: column; gap: 12px; }
+
         .sidebar-rec-item {
             display: flex;
             align-items: center;
@@ -135,27 +142,37 @@
             font-size: 13px;
             cursor: pointer;
             transition: background 0.15s;
+            padding: 6px;
+            border-radius: 6px;
         }
-        .sidebar-rec-item:hover { background: rgba(255,255,255,0.08); border-radius: 6px; }
+        .sidebar-rec-item:hover { background: rgba(255,255,255,0.08); }
         .sidebar-rec-item img {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             object-fit: cover;
-            border-radius: 4px;
+            border-radius: 6px;
             flex-shrink: 0;
         }
         .sidebar-rec-item-info { flex: 1; min-width: 0; }
         .sidebar-rec-item-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sidebar-rec-item-author { font-size: 11px; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
         .sidebar-rec-play-btn {
-            background: none; border: none; color: white; cursor: pointer; padding: 4px 8px;
-            border-radius: 4px; display: flex; align-items: center; justify-content: center;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: background 0.2s;
         }
         .sidebar-rec-play-btn:hover { background: rgba(255,255,255,0.2); }
         .sidebar-rec-play-btn svg { width: 18px; height: 18px; fill: white; }
 
-        /* HEADER – se oculta con scroll */
+        /* HEADER – se oculta con scroll (comportamiento original) */
         #main-header {
             grid-area: header;
             position: sticky;
@@ -164,15 +181,12 @@
             backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(255,255,255,0.05);
             z-index: 50;
-            transition: opacity 0.3s ease, transform 0.3s ease;
         }
-        #main-header.hidden {
-            opacity: 0;
-            transform: translateY(-100%);
-            pointer-events: none;
+        #main-header > div {
+            padding: 0.75rem 1rem;
         }
 
-        /* BARRA DE CATEGORÍAS – SIEMPRE VISIBLE (como en tu original) */
+        /* BARRA DE CATEGORÍAS – siempre fija arriba */
         #category-filters {
             grid-area: categories;
             position: sticky;
@@ -186,11 +200,12 @@
             padding: 0.5rem 1rem;
         }
 
-        /* CONTENEDOR PRINCIPAL */
+        /* CONTENEDOR PRINCIPAL – aquí va el scroll principal */
         #content {
             grid-area: content;
             padding: 1rem 1rem;
             min-height: 100vh;
+            overflow-y: auto;          /* scroll principal aquí */
         }
 
         @media (max-width: 768px) {
@@ -200,6 +215,9 @@
                     "header"
                     "categories"
                     "content";
+            }
+            #content {
+                padding: 1rem;
             }
         }
     </style>
@@ -225,14 +243,14 @@
     </div>
 </header>
 
-<!-- Barra de categorías – SIEMPRE VISIBLE -->
+<!-- Barra de categorías -->
 <div id="category-filters">
     <div class="overflow-x-auto no-scrollbar">
         <div class="flex items-center gap-2 sm:gap-3" id="category-pills"></div>
     </div>
 </div>
 
-<!-- Contenedor principal -->
+<!-- Contenedor principal (aquí va el scroll principal) -->
 <main id="content"></main>
 
 <!-- Reproductor flotante -->
@@ -253,7 +271,13 @@
     </div>
 </div>
 
-<!-- Script de la barra lateral -->
+<!-- Botón flotante móvil para abrir reproductor -->
+<button id="openPlayerBtn" class="fixed bottom-20 right-4 z-[1002] bg-[#7b2eda] rounded-full p-3 shadow-lg flex items-center gap-2 lg:hidden">
+    <img src="https://nikichitonjes-home.odoo.com/web/image/478-0e3df8d3/reanudar.gif" alt="Reproductor" class="w-6 h-6">
+    <span class="text-sm font-bold">Escuchar</span>
+</button>
+
+<!-- Script de la barra lateral – con episodios.js + SPA -->
 <script type="module">
 import { episodios, getSerieById } from '/episodios.js';
 
@@ -283,20 +307,20 @@ import { episodios, getSerieById } from '/episodios.js';
         const nav = document.createElement('div');
         nav.className = 'sidebar-nav';
         nav.innerHTML = `
-            <a href="/" class="sidebar-nav-item" title="Inicio" data-link>
-                <img src="https://media.baltaanay.org/web/image/798-1b947c8d/Home%20%282%29.webp" alt="Inicio" loading="lazy"><span>Inicio</span>
+            <a href="/" class="sidebar-nav-item" title="Home" data-link>
+                <img src="https://media.baltaanay.org/web/image/798-1b947c8d/Home%20%282%29.webp" alt="Home" loading="lazy"><span>Home</span>
             </a>
-            <a href="/buscar" class="sidebar-nav-item" title="Buscar" data-link>
-                <img src="https://www.baltaanay.org/web/image/986-2bf9d2bb/Search%20%282%29.webp" alt="Buscar" loading="lazy"><span>Explorar</span>
+            <a href="/buscar" class="sidebar-nav-item" title="Explorar" data-link>
+                <img src="https://www.baltaanay.org/web/image/986-2bf9d2bb/Search%20%282%29.webp" alt="Explorar" loading="lazy"><span>Explorar</span>
             </a>
-            <a href="/explorar" class="sidebar-nav-item" title="Cargar" data-link>
+            <a href="/subir" class="sidebar-nav-item" title="Cargar" data-link>
                 <img src="https://www.baltaanay.org/web/image/991-1c3c204a/subir.webp" alt="Cargar" loading="lazy"><span>Cargar</span>
             </a>
-            <a href="/explorar" class="sidebar-nav-item" title="Explorar">
-                <img src="https://media.baltaanay.org/web/image/796-aee658de/Explore.png" alt="Explorar" loading="lazy"><span>Explorar</span>
+            <a href="https://www.baltaanay.org/solicitud" class="sidebar-nav-item" title="Solicitar">
+                <img src="https://www.baltaanay.org/web/image/922-f3d79ca9/xhbalta-aula.png" alt="Solicitar" loading="lazy"><span>Solicitar</span>
             </a>
-            <a href="/biblioteca" class="sidebar-nav-item" title="Biblioteca" data-link>
-                <img src="https://nikichitonjesus.odoo.com/web/image/994-cd04e806/Archive.webp" alt="Biblioteca" loading="lazy"><span>Biblioteca</span>
+            <a href="/my/home" class="sidebar-nav-item" title="Usuario" data-link>
+                <img src="https://nikichitonjesus3.odoo.com/web/image/453-f4d8c1eb/user.png" alt="Usuario" loading="lazy"><span>Portal</span>
             </a>
         `;
 
@@ -319,46 +343,47 @@ import { episodios, getSerieById } from '/episodios.js';
         const container = document.getElementById('sidebarRecList');
         if (!container) return;
 
-        const selectedEpisodes = getRandomEpisodes(12);
+        container.innerHTML = '';
 
-        if (!selectedEpisodes.length) {
+        const selected = getRandomEpisodes(12);
+
+        if (!selected.length) {
             container.innerHTML = '<div style="color:#aaa; padding:8px;">No hay episodios disponibles</div>';
             return;
         }
 
-        container.innerHTML = '';
-
-        selectedEpisodes.forEach(ep => {
+        selected.forEach(ep => {
             const serie = getSerieById(ep.seriesid) || {};
             const item = document.createElement('div');
             item.className = 'sidebar-rec-item';
             item.innerHTML = `
-                <img src="${serie.portada_serie || ep.coverUrl || 'https://via.placeholder.com/36'}" alt="${ep.title}" loading="lazy">
+                <img src="${serie.portada_serie || ep.coverUrl || 'https://via.placeholder.com/40'}" alt="${ep.title}" loading="lazy">
                 <div class="sidebar-rec-item-info">
                     <div class="sidebar-rec-item-title">${ep.title}</div>
-                    <div class="sidebar-rec-item-author">${ep.author || '—'}</div>
+                    <div class="sidebar-rec-item-author">${ep.author || serie.titulo_serie || '—'}</div>
                 </div>
-                <button class="sidebar-rec-play-btn" data-detail-url="${ep.detailUrl || '#'}">
+                <button class="sidebar-rec-play-btn" data-url="${ep.detailUrl || '#'}">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 </button>
             `;
 
-            const btn = item.querySelector('.sidebar-rec-play-btn');
-            btn.addEventListener('click', (e) => {
+            // Clic → SPA (usa router de main.js)
+            const btn = item.querySelector('button');
+            btn.addEventListener('click', e => {
                 e.preventDefault();
                 e.stopPropagation();
-                const url = btn.dataset.detailUrl;
-                if (url && url !== '#' && !url.startsWith('http') && window.router) {
+                const url = btn.dataset.url;
+                if (url && url !== '#' && window.router) {
                     window.history.pushState(null, null, url);
                     window.router();
                 }
             });
 
-            item.addEventListener('click', (e) => {
+            item.addEventListener('click', e => {
                 if (e.target.tagName !== 'BUTTON') {
                     e.preventDefault();
                     const url = ep.detailUrl;
-                    if (url && url !== '#' && !url.startsWith('http') && window.router) {
+                    if (url && url !== '#' && window.router) {
                         window.history.pushState(null, null, url);
                         window.router();
                     }
@@ -389,7 +414,7 @@ import { episodios, getSerieById } from '/episodios.js';
         const newToggle = toggle.cloneNode(true);
         toggle.parentNode.replaceChild(newToggle, toggle);
 
-        newToggle.addEventListener('click', (e) => {
+        newToggle.addEventListener('click', e => {
             e.stopPropagation();
             e.preventDefault();
             const isCollapsed = sidebar.classList.contains('collapsed');
