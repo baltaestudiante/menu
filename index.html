@@ -240,12 +240,6 @@
     </div>
 </div>
 
-<!-- Botón flotante móvil para abrir reproductor -->
-<button id="openPlayerBtn" class="fixed bottom-20 right-4 z-[1002] bg-[#7b2eda] rounded-full p-3 shadow-lg flex items-center gap-2 lg:hidden">
-    <img src="https://nikichitonjes-home.odoo.com/web/image/478-0e3df8d3/reanudar.gif" alt="Reproductor" class="w-6 h-6">
-    <span class="text-sm font-bold">Escuchar</span>
-</button>
-
 <!-- Script de la barra lateral (optimizado) -->
 <script>
 (function() {
@@ -273,20 +267,20 @@
         const nav = document.createElement('div');
         nav.className = 'sidebar-nav';
         nav.innerHTML = `
-            <a href="/" class="sidebar-nav-item" title="Home" data-link>
-                <img src="https://media.baltaanay.org/web/image/798-1b947c8d/Home%20%282%29.webp" alt="Home" loading="lazy"><span>Home</span>
+            <a href="/" class="sidebar-nav-item" title="Inicio" data-link>
+                <img src="https://media.baltaanay.org/web/image/798-1b947c8d/Home%20%282%29.webp" alt="Inicio" loading="lazy"><span>Home</span>
             </a>
-            <a href="/buscar" class="sidebar-nav-item" title="Explorar" data-link>
-                <img src="https://www.baltaanay.org/web/image/986-2bf9d2bb/Search%20%282%29.webp" alt="Explorar" loading="lazy"><span>Explorar</span>
+            <a href="/buscar" class="sidebar-nav-item" title="Buscar" data-link>
+                <img src="https://www.baltaanay.org/web/image/986-2bf9d2bb/Search%20%282%29.webp" alt="Buscar" loading="lazy"><span>Explorar</span>
             </a>
-            <a href="/subir" class="sidebar-nav-item" title="Cargar" data-link>
-                <img src="https://www.baltaanay.org/web/image/991-1c3c204a/subir.webp" alt="Cargar" loading="lazy"><span>Cargar</span>
+            <a href="/explorar" class="sidebar-nav-item" title="Cargar" data-link>
+                <img src="https://www.baltaanay.org/web/image/991-1c3c204a/subir.webp" alt="Explorar" loading="lazy"><span>Cargar</span>
             </a>
-            <a href="https://www.baltaanay.org/solicitud" class="sidebar-nav-item" title="Solicitar">
-                <img src="https://www.baltaanay.org/web/image/922-f3d79ca9/xhbalta-aula.png" alt="Solicitar" loading="lazy"><span>Solicitar</span>
+            <a href="/explorar" class="sidebar-nav-item" title="Explorar">
+                <img src="https://media.baltaanay.org/web/image/796-aee658de/Explore.png" alt="Explorar" loading="lazy"><span>Solicitar</span>
             </a>
-            <a href="/my/home" class="sidebar-nav-item" title="Usuario" data-link>
-                <img src="https://nikichitonjesus3.odoo.com/web/image/453-f4d8c1eb/user.png" alt="Usuario" loading="lazy"><span>Portal</span>
+            <a href="/biblioteca" class="sidebar-nav-item" title="Biblioteca" data-link>
+                <img src="https://nikichitonjesus.odoo.com/web/image/994-cd04e806/Archive.webp" alt="Biblioteca" loading="lazy"><span>Portal</span>
             </a>
         `;
 
