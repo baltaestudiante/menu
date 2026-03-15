@@ -13,8 +13,8 @@
     <link rel="icon" type="image/png" sizes="16x16" href="https://media.baltaanay.org/web/image/885-f3d79ca9/xhbalta-aula.png">
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="/styles.css">
-    
-    <!-- ESTILOS BASE - CON CSS GRID MEJORADO (SIDEBAR CON ANCHO FIJO) -->
+   
+    <!-- ESTILOS BASE - SIDEBAR STICKY -->
     <style id="sidebar-base-styles">
         * {
             box-sizing: border-box;
@@ -31,17 +31,20 @@
             display: grid;
             grid-template-columns: auto 1fr;
             grid-template-rows: auto auto 1fr;
-            grid-template-areas: 
+            grid-template-areas:
                 "sidebar header"
                 "sidebar categories"
                 "sidebar content";
         }
-        /* SIDEBAR */
+        /* SIDEBAR – ahora sticky y siempre visible */
         .sidebar-desktop {
             grid-area: sidebar;
             background: #0F0F0F;
             color: #fff;
             z-index: 900;
+            position: sticky;
+            top: 0;
+            height: 100vh;
             overflow-x: hidden;
             overflow-y: auto;
             box-shadow: 2px 0 5px rgba(0,0,0,0.5);
@@ -64,7 +67,6 @@
         @media (max-width: 768px) {
             .sidebar-desktop { display: none !important; }
         }
-
         .sidebar-toggle {
             display: flex;
             justify-content: flex-end;
@@ -75,7 +77,6 @@
         }
         .sidebar-toggle svg { width: 24px; height: 24px; fill: white; transition: transform 0.2s; }
         .sidebar-desktop.expanded .sidebar-toggle svg { transform: rotate(180deg); }
-
         .sidebar-nav {
             display: flex;
             flex-direction: column;
@@ -99,7 +100,6 @@
         .sidebar-nav-item img { width: 24px; height: 24px; filter: brightness(1.2); flex-shrink: 0; }
         .sidebar-nav-item span { font-size: 14px; font-weight: 500; }
         .sidebar-desktop:not(.expanded) .sidebar-nav-item span { display: none; }
-
         .sidebar-desktop:not(.expanded) .sidebar-rec-section { display: none; }
         .sidebar-rec-section {
             padding: 0 8px;
@@ -132,13 +132,42 @@
             align-items: center;
             gap: 10px;
             font-size: 13px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .sidebar-rec-item:hover { background: rgba(255,255,255,0.08); border-radius: 6px; }
+        .sidebar-rec-item img {
+            width: 36px;
+            height: 36px;
+            object-fit: cover;
+            border-radius: 4px;
+            flex-shrink: 0;
         }
         .sidebar-rec-item-info { flex: 1; min-width: 0; }
-        .sidebar-rec-item-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .sidebar-rec-item-author { font-size: 11px; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sidebar-rec-item-title {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .sidebar-rec-item-author {
+            font-size: 11px;
+            opacity: 0.7;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
         .sidebar-rec-play-btn {
-            background: none; border: none; color: white; cursor: pointer; padding: 4px 8px; border-radius: 4px;
-            display: flex; align-items: center; justify-content: center; transition: background 0.2s;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
         }
         .sidebar-rec-play-btn:hover { background: rgba(255,255,255,0.2); }
         .sidebar-rec-play-btn svg { width: 18px; height: 18px; fill: white; }
@@ -156,7 +185,6 @@
         #main-header > div {
             padding: 0.75rem 1rem;
         }
-
         /* BARRA DE CATEGORÍAS */
         #category-filters {
             grid-area: categories;
@@ -170,19 +198,16 @@
         #category-filters > div {
             padding: 0.5rem 1rem;
         }
-
         /* CONTENEDOR PRINCIPAL */
         #content {
             grid-area: content;
             padding: 1rem 1rem;
             min-height: 100vh;
         }
-
-        /* En móviles, una sola columna */
         @media (max-width: 768px) {
             body {
                 grid-template-columns: 1fr;
-                grid-template-areas: 
+                grid-template-areas:
                     "header"
                     "categories"
                     "content";
@@ -199,7 +224,6 @@
             <img src="https://media.baltaanay.org/web/image/885-f3d79ca9/xhbalta-aula.png" alt="Balta Media" class="w-6 h-6 sm:w-8 sm:h-8 rounded-lg object-cover" loading="lazy">
             <span class="text-lg sm:text-xl font-bold text-white">Balta Media</span>
         </a>
-
         <div class="flex items-center gap-3 sm:gap-4">
             <a href="/novedades" class="relative text-gray-400 hover:text-white" data-link>
                 <img src="https://media.baltaanay.org/web/image/796-aee658de/Explore.png" alt="Novedades" class="w-5 h-5" loading="lazy">
@@ -222,7 +246,7 @@
 <!-- Contenedor principal -->
 <main id="content"></main>
 
-<!-- Reproductor flotante (se inyecta vía player.js) -->
+<!-- Reproductor flotante (inyectado por player.js) -->
 <div id="floating-player" class="fixed bottom-0 left-0 right-0 bg-[#1a1a1a] border-t border-[#333] p-3 flex items-center justify-between z-[10000] backdrop-blur hidden">
     <!-- El contenido lo genera player.js -->
 </div>
@@ -240,8 +264,10 @@
     </div>
 </div>
 
-<!-- Script de la barra lateral (optimizado) -->
-<script>
+<!-- Script de la barra lateral (modificado) -->
+<script type="module">
+import { episodios, getSerieById } from '/episodios.js';
+
 (function() {
     const SIDEBAR_CONFIG = { BREAKPOINT: 768 };
     let sidebarInstance = {
@@ -250,8 +276,9 @@
         isMobile: window.innerWidth <= SIDEBAR_CONFIG.BREAKPOINT
     };
 
-    function getRecommendations() {
-        try { return window.RECOMENDADOS || []; } catch (e) { return []; }
+    function getRandomEpisodes(count = 12) {
+        const shuffled = [...episodios].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count);
     }
 
     function renderSidebar() {
@@ -274,7 +301,7 @@
                 <img src="https://www.baltaanay.org/web/image/986-2bf9d2bb/Search%20%282%29.webp" alt="Buscar" loading="lazy"><span>Explorar</span>
             </a>
             <a href="/explorar" class="sidebar-nav-item" title="Cargar" data-link>
-                <img src="https://www.baltaanay.org/web/image/991-1c3c204a/subir.webp" alt="Explorar" loading="lazy"><span>Cargar</span>
+                <img src="https://www.baltaanay.org/web/image/991-1c3c204a/subir.webp" alt="Cargar" loading="lazy"><span>Cargar</span>
             </a>
             <a href="/explorar" class="sidebar-nav-item" title="Explorar">
                 <img src="https://media.baltaanay.org/web/image/796-aee658de/Explore.png" alt="Explorar" loading="lazy"><span>Explorar</span>
@@ -302,45 +329,49 @@
     function populateRecommendations() {
         const container = document.getElementById('sidebarRecList');
         if (!container) return;
-        const episodes = getRecommendations();
-        if (!episodes.length) {
-            container.innerHTML = '<div style="color:#aaa; padding:8px;">No hay recomendados</div>';
+
+        const selectedEpisodes = getRandomEpisodes(12);
+
+        if (!selectedEpisodes.length) {
+            container.innerHTML = '<div style="color:#aaa; padding:8px;">No hay episodios disponibles</div>';
             return;
         }
+
         container.innerHTML = '';
-        episodes.forEach(ep => {
-            const title = ep.title || 'Sin título';
-            const author = ep.author || (ep.series?.titulo_serie) || 'Desconocido';
+
+        selectedEpisodes.forEach(ep => {
+            const serie = getSerieById(ep.seriesid) || {};
             const item = document.createElement('div');
             item.className = 'sidebar-rec-item';
             item.innerHTML = `
+                <img src="${serie.portada_serie || ep.coverUrl || 'https://via.placeholder.com/36'}" alt="${ep.title}" loading="lazy">
                 <div class="sidebar-rec-item-info">
-                    <div class="sidebar-rec-item-title">${title}</div>
-                    <div class="sidebar-rec-item-author">${author}</div>
+                    <div class="sidebar-rec-item-title">${ep.title}</div>
+                    <div class="sidebar-rec-item-author">${ep.author || '—'}</div>
                 </div>
-                <button class="sidebar-rec-play-btn" data-episode='${JSON.stringify(ep).replace(/'/g, "&#39;")}'>
+                <button class="sidebar-rec-play-btn" data-detail-url="${ep.detailUrl || '#'}">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 </button>
             `;
+
+            // Redirigir al detailUrl al hacer clic en el botón
             const btn = item.querySelector('.sidebar-rec-play-btn');
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const epData = JSON.parse(btn.dataset.episode);
-                if (typeof window.playEpisodeExpanded === 'function') {
-                    window.playEpisodeExpanded(
-                        epData.mediaUrl || '',
-                        epData.type || 'audio',
-                        epData.coverUrl || '',
-                        epData.series?.portada_serie || epData.coverUrl || '',
-                        epData.title || '',
-                        epData.detailUrl || '',
-                        epData.author || (epData.series?.titulo_serie) || 'Roberto',
-                        epData.next || [],
-                        epData.description || '',
-                        true
-                    );
+                const url = btn.dataset.detailUrl;
+                if (url && url !== '#') {
+                    window.location.href = url;
                 }
             });
+
+            // Opcional: también redirigir si se hace clic en toda la fila
+            item.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'BUTTON') {
+                    const url = ep.detailUrl;
+                    if (url) window.location.href = url;
+                }
+            });
+
             container.appendChild(item);
         });
     }
@@ -349,8 +380,8 @@
         const currentPath = window.location.pathname;
         document.querySelectorAll('.sidebar-nav-item').forEach(item => {
             const href = item.getAttribute('href');
-            item.classList.toggle('active', 
-                (href === currentPath) || 
+            item.classList.toggle('active',
+                (href === currentPath) ||
                 (href === '/' && currentPath === '/') ||
                 (href === '/buscar' && currentPath === '/buscar')
             );
@@ -361,8 +392,10 @@
         const sidebar = document.getElementById('sidebarDesktop');
         const toggle = document.getElementById('sidebarDesktopToggle');
         if (!sidebar || !toggle) return;
+
         const newToggle = toggle.cloneNode(true);
         toggle.parentNode.replaceChild(newToggle, toggle);
+
         newToggle.addEventListener('click', (e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -382,12 +415,16 @@
         sidebarInstance.isMobile = window.innerWidth <= SIDEBAR_CONFIG.BREAKPOINT;
         const oldSidebar = document.querySelector('.sidebar-desktop');
         if (oldSidebar) oldSidebar.remove();
+
         if (sidebarInstance.isMobile) return;
+
         const sidebar = renderSidebar();
         document.body.insertBefore(sidebar, document.body.firstChild);
+
         populateRecommendations();
         initSidebarToggle();
         setActiveNavItem();
+
         sidebarInstance.initialized = true;
     }
 
@@ -432,5 +469,6 @@
 
 <!-- Módulos JS -->
 <script type="module" src="/main.js"></script>
+
 </body>
 </html>
