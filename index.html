@@ -1,67 +1,70 @@
-<script>
-(function() {
-    // ==========================================================================
-    // CONFIGURACIÓN BARRA LATERAL
-    // ==========================================================================
-    const SIDEBAR_CONFIG = {
-        BREAKPOINT: 768,
-        COLOR: '#0F0F0F',
-        WIDTH_EXPANDED: '15%',
-        WIDTH_COLLAPSED: '70px',
-        MIN_WIDTH_EXPANDED: '180px'
-    };
-
-    // ==========================================================================
-    // VARIABLES DE ESTADO
-    // ==========================================================================
-    let sidebarInitialized = false;
-    let currentState = 'collapsed'; // 'collapsed' o 'expanded'
-
-    // ==========================================================================
-    // ESTILOS BARRA LATERAL
-    // ==========================================================================
-    const sidebarStyles = `
-        /* ===== BARRA LATERAL ===== */
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Balta Media · Conocimiento en acción</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fuentes -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="https://media.baltaanay.org/web/image/885-f3d79ca9/xhbalta-aula.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://media.baltaanay.org/web/image/885-f3d79ca9/xhbalta-aula.png">
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="/styles.css">
+    
+    <!-- ESTILOS BASE - CON CSS GRID MEJORADO (SIDEBAR CON ANCHO FIJO) -->
+    <style id="sidebar-base-styles">
+        * {
+            box-sizing: border-box;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow-x: hidden;
+        }
+        body {
+            min-height: 100vh;
+            background: #050505;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            grid-template-rows: auto auto 1fr;
+            grid-template-areas: 
+                "sidebar header"
+                "sidebar categories"
+                "sidebar content";
+        }
+        /* SIDEBAR */
         .sidebar-desktop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
-            background: ${SIDEBAR_CONFIG.COLOR};
+            grid-area: sidebar;
+            background: #0F0F0F;
             color: #fff;
             z-index: 900;
-            transition: width 0.3s ease;
             overflow-x: hidden;
             overflow-y: auto;
             box-shadow: 2px 0 5px rgba(0,0,0,0.5);
             scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-        .sidebar-desktop::-webkit-scrollbar {
-            display: none;
-        }
-        .sidebar-desktop.collapsed {
-            width: ${SIDEBAR_CONFIG.WIDTH_COLLAPSED};
+            transition: width 0.3s ease;
+            width: 70px;
+            min-width: 70px;
         }
         .sidebar-desktop.expanded {
-            width: ${SIDEBAR_CONFIG.WIDTH_EXPANDED};
-            min-width: ${SIDEBAR_CONFIG.MIN_WIDTH_EXPANDED};
+            width: 220px;
+            min-width: 220px;
         }
-        
-        @media (max-width: ${SIDEBAR_CONFIG.BREAKPOINT}px) {
-            .sidebar-desktop {
-                display: none !important;
+        @media (min-width: 1280px) {
+            .sidebar-desktop.expanded {
+                width: 250px;
+                min-width: 250px;
             }
-            
-            /* Resetear estilos en móvil */
-            body, #main-header, #category-filters, #content, .player-universal {
-                margin-left: 0 !important;
-                left: 0 !important;
-                width: 100% !important;
-            }
+        }
+        .sidebar-desktop::-webkit-scrollbar { display: none; }
+        @media (max-width: 768px) {
+            .sidebar-desktop { display: none !important; }
         }
 
-        /* Botón toggle */
         .sidebar-toggle {
             display: flex;
             justify-content: flex-end;
@@ -70,17 +73,9 @@
             border-bottom: 1px solid rgba(255,255,255,0.1);
             margin-bottom: 20px;
         }
-        .sidebar-toggle svg {
-            width: 24px;
-            height: 24px;
-            fill: white;
-            transition: transform 0.2s;
-        }
-        .sidebar-desktop.expanded .sidebar-toggle svg {
-            transform: rotate(180deg);
-        }
+        .sidebar-toggle svg { width: 24px; height: 24px; fill: white; transition: transform 0.2s; }
+        .sidebar-desktop.expanded .sidebar-toggle svg { transform: rotate(180deg); }
 
-        /* Navegación */
         .sidebar-nav {
             display: flex;
             flex-direction: column;
@@ -99,31 +94,13 @@
             white-space: nowrap;
             transition: background 0.2s;
         }
-        .sidebar-nav-item:hover {
-            background: rgba(255,255,255,0.1);
-        }
-        .sidebar-nav-item.active {
-            background: rgba(255,255,255,0.2);
-        }
-        .sidebar-nav-item img {
-            width: 24px;
-            height: 24px;
-            filter: brightness(1.2);
-            flex-shrink: 0;
-        }
-        .sidebar-nav-item span {
-            font-size: 14px;
-            font-weight: 500;
-            transition: opacity 0.2s;
-        }
-        .sidebar-desktop.collapsed .sidebar-nav-item span {
-            display: none;
-        }
+        .sidebar-nav-item:hover { background: rgba(255,255,255,0.1); }
+        .sidebar-nav-item.active { background: rgba(255,255,255,0.2); }
+        .sidebar-nav-item img { width: 24px; height: 24px; filter: brightness(1.2); flex-shrink: 0; }
+        .sidebar-nav-item span { font-size: 14px; font-weight: 500; }
+        .sidebar-desktop:not(.expanded) .sidebar-nav-item span { display: none; }
 
-        /* Sección de recomendados */
-        .sidebar-desktop.collapsed .sidebar-rec-section {
-            display: none;
-        }
+        .sidebar-desktop:not(.expanded) .sidebar-rec-section { display: none; }
         .sidebar-rec-section {
             padding: 0 8px;
             margin-top: 20px;
@@ -148,129 +125,176 @@
             align-items: center;
             gap: 6px;
         }
-        .sidebar-rec-header a:hover {
-            opacity: 1;
-        }
-        .sidebar-rec-header svg {
-            width: 16px;
-            height: 16px;
-            fill: white;
-        }
-        .sidebar-rec-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
+        .sidebar-rec-header svg { width: 16px; height: 16px; fill: white; }
+        .sidebar-rec-list { display: flex; flex-direction: column; gap: 12px; }
         .sidebar-rec-item {
             display: flex;
             align-items: center;
             gap: 10px;
             font-size: 13px;
         }
-        .sidebar-rec-item-info {
-            flex: 1;
-            min-width: 0;
-        }
-        .sidebar-rec-item-title {
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .sidebar-rec-item-author {
-            font-size: 11px;
-            opacity: 0.7;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        .sidebar-rec-item-info { flex: 1; min-width: 0; }
+        .sidebar-rec-item-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sidebar-rec-item-author { font-size: 11px; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sidebar-rec-play-btn {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
+            background: none; border: none; color: white; cursor: pointer; padding: 4px 8px; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center; transition: background 0.2s;
         }
-        .sidebar-rec-play-btn:hover {
-            background: rgba(255,255,255,0.2);
-        }
-        .sidebar-rec-play-btn svg {
-            width: 18px;
-            height: 18px;
-            fill: white;
-        }
-    `;
+        .sidebar-rec-play-btn:hover { background: rgba(255,255,255,0.2); }
+        .sidebar-rec-play-btn svg { width: 18px; height: 18px; fill: white; }
 
-    // ==========================================================================
-    // FUNCIONES BARRA LATERAL
-    // ==========================================================================
-    function injectSidebarStyles() {
-        if (document.getElementById('sidebar-desktop-styles')) return;
-        const style = document.createElement('style');
-        style.id = 'sidebar-desktop-styles';
-        style.textContent = sidebarStyles;
-        document.head.appendChild(style);
-    }
+        /* HEADER */
+        #main-header {
+            grid-area: header;
+            position: sticky;
+            top: 0;
+            background: rgba(5,5,5,0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            z-index: 50;
+        }
+        #main-header > div {
+            padding: 0.75rem 1rem;
+        }
+
+        /* BARRA DE CATEGORÍAS */
+        #category-filters {
+            grid-area: categories;
+            position: sticky;
+            top: 0;
+            background: rgba(5,5,5,0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            z-index: 40;
+        }
+        #category-filters > div {
+            padding: 0.5rem 1rem;
+        }
+
+        /* CONTENEDOR PRINCIPAL */
+        #content {
+            grid-area: content;
+            padding: 1rem 1rem;
+            min-height: 100vh;
+        }
+
+        /* En móviles, una sola columna */
+        @media (max-width: 768px) {
+            body {
+                grid-template-columns: 1fr;
+                grid-template-areas: 
+                    "header"
+                    "categories"
+                    "content";
+            }
+        }
+    </style>
+</head>
+<body class="bg-[#050505] text-white font-[Plus_Jakarta_Sans]">
+
+<!-- Header principal -->
+<header id="main-header">
+    <div class="flex items-center justify-between">
+        <a href="/" class="flex items-center gap-2" data-link>
+            <img src="https://media.baltaanay.org/web/image/885-f3d79ca9/xhbalta-aula.png" alt="Balta Media" class="w-6 h-6 sm:w-8 sm:h-8 rounded-lg object-cover" loading="lazy">
+            <span class="text-lg sm:text-xl font-bold text-white">Balta Media</span>
+        </a>
+
+        <div class="flex items-center gap-3 sm:gap-4">
+            <a href="/novedades" class="relative text-gray-400 hover:text-white" data-link>
+                <img src="https://media.baltaanay.org/web/image/796-aee658de/Explore.png" alt="Novedades" class="w-5 h-5" loading="lazy">
+                <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </a>
+            <a href="/my/home" class="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full overflow-hidden" data-link>
+                <img src="https://media.baltaanay.org/web/image/793-902e5b33/Search%20%282%29.png" alt="Usuario" class="w-full h-full object-cover" loading="lazy">
+            </a>
+        </div>
+    </div>
+</header>
+
+<!-- Barra de categorías -->
+<div id="category-filters">
+    <div class="overflow-x-auto no-scrollbar">
+        <div class="flex items-center gap-2 sm:gap-3" id="category-pills"></div>
+    </div>
+</div>
+
+<!-- Contenedor principal -->
+<main id="content"></main>
+
+<!-- Reproductor flotante (se inyecta vía player.js) -->
+<div id="floating-player" class="fixed bottom-0 left-0 right-0 bg-[#1a1a1a] border-t border-[#333] p-3 flex items-center justify-between z-[10000] backdrop-blur hidden">
+    <!-- El contenido lo genera player.js -->
+</div>
+
+<!-- Modal de error -->
+<div id="errorModal" class="fixed inset-0 z-[10000] flex items-center justify-center hidden" style="background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);">
+    <div class="bg-[#1e1e2f] rounded-2xl max-w-md w-full p-6 border border-white/10 shadow-2xl">
+        <h3 class="text-xl font-bold text-white mb-3" id="errorModalTitle">Error</h3>
+        <p class="text-gray-300 mb-6" id="errorModalMessage"></p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-end">
+            <a href="https://www.baltaanay.org/contactus" target="_blank" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm font-semibold text-center">Reportar problema</a>
+            <a href="https://www.baltaanay.org/solicitar" target="_blank" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white text-sm font-semibold text-center">Solicitar</a>
+            <button id="closeErrorModal" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white text-sm font-semibold">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Botón flotante móvil para abrir reproductor -->
+<button id="openPlayerBtn" class="fixed bottom-20 right-4 z-[1002] bg-[#7b2eda] rounded-full p-3 shadow-lg flex items-center gap-2 lg:hidden">
+    <img src="https://nikichitonjes-home.odoo.com/web/image/478-0e3df8d3/reanudar.gif" alt="Reproductor" class="w-6 h-6">
+    <span class="text-sm font-bold">Escuchar</span>
+</button>
+
+<!-- Script de la barra lateral (optimizado) -->
+<script>
+(function() {
+    const SIDEBAR_CONFIG = { BREAKPOINT: 768 };
+    let sidebarInstance = {
+        initialized: false,
+        currentState: localStorage.getItem('sidebar_state') || 'collapsed',
+        isMobile: window.innerWidth <= SIDEBAR_CONFIG.BREAKPOINT
+    };
 
     function getRecommendations() {
-        try {
-            return window.RECOMENDADOS || [];
-        } catch (e) {
-            return [];
-        }
+        try { return window.RECOMENDADOS || []; } catch (e) { return []; }
     }
 
     function renderSidebar() {
         const sidebar = document.createElement('aside');
-        sidebar.className = `sidebar-desktop ${currentState}`;
+        sidebar.className = `sidebar-desktop ${sidebarInstance.currentState}`;
         sidebar.id = 'sidebarDesktop';
 
-        // Botón toggle
         const toggle = document.createElement('div');
         toggle.className = 'sidebar-toggle';
         toggle.id = 'sidebarDesktopToggle';
         toggle.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>';
 
-        // Navegación
         const nav = document.createElement('div');
         nav.className = 'sidebar-nav';
         nav.innerHTML = `
             <a href="/" class="sidebar-nav-item" title="Home" data-link>
-                <img src="https://media.baltaanay.org/web/image/798-1b947c8d/Home%20%282%29.webp" alt="Home" loading="lazy">
-                <span>Home</span>
+                <img src="https://media.baltaanay.org/web/image/798-1b947c8d/Home%20%282%29.webp" alt="Home" loading="lazy"><span>Home</span>
             </a>
             <a href="/buscar" class="sidebar-nav-item" title="Explorar" data-link>
-                <img src="https://www.baltaanay.org/web/image/986-2bf9d2bb/Search%20%282%29.webp" alt="Explorar" loading="lazy">
-                <span>Explorar</span>
+                <img src="https://www.baltaanay.org/web/image/986-2bf9d2bb/Search%20%282%29.webp" alt="Explorar" loading="lazy"><span>Explorar</span>
             </a>
             <a href="/subir" class="sidebar-nav-item" title="Cargar" data-link>
-                <img src="https://www.baltaanay.org/web/image/991-1c3c204a/subir.webp" alt="Cargar" loading="lazy">
-                <span>Cargar</span>
+                <img src="https://www.baltaanay.org/web/image/991-1c3c204a/subir.webp" alt="Cargar" loading="lazy"><span>Cargar</span>
             </a>
             <a href="https://www.baltaanay.org/solicitud" class="sidebar-nav-item" title="Solicitar">
-                <img src="https://www.baltaanay.org/web/image/922-f3d79ca9/xhbalta-aula.png" alt="Solicitar" loading="lazy">
-                <span>Solicitar</span>
+                <img src="https://www.baltaanay.org/web/image/922-f3d79ca9/xhbalta-aula.png" alt="Solicitar" loading="lazy"><span>Solicitar</span>
             </a>
             <a href="/my/home" class="sidebar-nav-item" title="Usuario" data-link>
-                <img src="https://nikichitonjesus3.odoo.com/web/image/453-f4d8c1eb/user.png" alt="Usuario" loading="lazy">
-                <span>Portal</span>
+                <img src="https://nikichitonjesus3.odoo.com/web/image/453-f4d8c1eb/user.png" alt="Usuario" loading="lazy"><span>Portal</span>
             </a>
         `;
 
-        // Sección recomendados
         const recSection = document.createElement('div');
         recSection.className = 'sidebar-rec-section';
         recSection.innerHTML = `
             <div class="sidebar-rec-header">
-                <a href="/novedades" data-link>
-                    Recomendados
-                    <svg viewBox="0 0 24 24"><path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-                </a>
+                <a href="/novedades" data-link>Recomendados<svg viewBox="0 0 24 24"><path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg></a>
             </div>
             <div class="sidebar-rec-list" id="sidebarRecList"></div>
         `;
@@ -281,21 +305,18 @@
         return sidebar;
     }
 
-    function populateSidebarRecommendations() {
+    function populateRecommendations() {
         const container = document.getElementById('sidebarRecList');
         if (!container) return;
-
         const episodes = getRecommendations();
-
         if (!episodes.length) {
             container.innerHTML = '<div style="color:#aaa; padding:8px;">No hay recomendados</div>';
             return;
         }
-
         container.innerHTML = '';
         episodes.forEach(ep => {
             const title = ep.title || 'Sin título';
-            const author = ep.author || (ep.series && ep.series.titulo_serie) || 'Desconocido';
+            const author = ep.author || (ep.series?.titulo_serie) || 'Desconocido';
             const item = document.createElement('div');
             item.className = 'sidebar-rec-item';
             item.innerHTML = `
@@ -307,7 +328,6 @@
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 </button>
             `;
-            
             const btn = item.querySelector('.sidebar-rec-play-btn');
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -331,185 +351,72 @@
         });
     }
 
-    function adjustLayout(expanded) {
-        const body = document.body;
-        const header = document.getElementById('main-header');
-        const categories = document.getElementById('category-filters');
-        const content = document.getElementById('content');
-        const player = document.querySelector('.player-universal');
-
-        const width = expanded ? SIDEBAR_CONFIG.WIDTH_EXPANDED : SIDEBAR_CONFIG.WIDTH_COLLAPSED;
-        
-        // Actualizar estado
-        currentState = expanded ? 'expanded' : 'collapsed';
-        
-        // Solo aplicar si estamos en desktop
-        if (window.innerWidth > SIDEBAR_CONFIG.BREAKPOINT) {
-            body.style.marginLeft = width;
-            
-            if (header) {
-                header.style.left = width;
-                header.style.width = `calc(100% - ${width})`;
-            }
-            if (categories) {
-                categories.style.left = width;
-                categories.style.width = `calc(100% - ${width})`;
-            }
-            if (content) {
-                content.style.marginLeft = width;
-                content.style.maxWidth = `calc(1600px - ${width})`;
-            }
-            if (player) {
-                player.style.left = width;
-                player.style.width = `calc(100% - ${width})`;
-            }
-            
-            body.classList.add('has-sidebar');
-        }
-    }
-
-    function resetLayout() {
-        const body = document.body;
-        const header = document.getElementById('main-header');
-        const categories = document.getElementById('category-filters');
-        const content = document.getElementById('content');
-        const player = document.querySelector('.player-universal');
-
-        body.style.marginLeft = '';
-        body.classList.remove('has-sidebar');
-        
-        if (header) {
-            header.style.left = '';
-            header.style.width = '';
-        }
-        if (categories) {
-            categories.style.left = '';
-            categories.style.width = '';
-        }
-        if (content) {
-            content.style.marginLeft = '';
-            content.style.maxWidth = '';
-        }
-        if (player) {
-            player.style.left = '';
-            player.style.width = '';
-        }
+    function setActiveNavItem() {
+        const currentPath = window.location.pathname;
+        document.querySelectorAll('.sidebar-nav-item').forEach(item => {
+            const href = item.getAttribute('href');
+            item.classList.toggle('active', 
+                (href === currentPath) || 
+                (href === '/' && currentPath === '/') ||
+                (href === '/buscar' && currentPath === '/buscar')
+            );
+        });
     }
 
     function initSidebarToggle() {
         const sidebar = document.getElementById('sidebarDesktop');
         const toggle = document.getElementById('sidebarDesktopToggle');
         if (!sidebar || !toggle) return;
-
-        // Remover listeners anteriores para evitar duplicados
         const newToggle = toggle.cloneNode(true);
         toggle.parentNode.replaceChild(newToggle, toggle);
-        
         newToggle.addEventListener('click', (e) => {
             e.stopPropagation();
             e.preventDefault();
-            
             const isCollapsed = sidebar.classList.contains('collapsed');
             if (isCollapsed) {
                 sidebar.classList.remove('collapsed');
                 sidebar.classList.add('expanded');
-                adjustLayout(true);
             } else {
                 sidebar.classList.add('collapsed');
                 sidebar.classList.remove('expanded');
-                adjustLayout(false);
             }
+            localStorage.setItem('sidebar_state', isCollapsed ? 'expanded' : 'collapsed');
         });
-    }
-
-    function setActiveNavItem() {
-        const currentPath = window.location.pathname;
-        document.querySelectorAll('.sidebar-nav-item').forEach(item => {
-            const href = item.getAttribute('href');
-            // Solo marcar como activo si es un enlace interno (tiene data-link)
-            if (item.hasAttribute('data-link')) {
-                item.classList.toggle('active', href === currentPath || (href === '/' && currentPath === '/'));
-            }
-        });
-    }
-
-    function removeExistingSidebar() {
-        const oldSidebar = document.querySelector('.sidebar-desktop');
-        if (oldSidebar) oldSidebar.remove();
-        resetLayout();
     }
 
     function initSidebar() {
-        // Prevenir múltiples inicializaciones
-        if (sidebarInitialized) {
-            // Solo actualizar estado activo
-            setActiveNavItem();
-            return;
-        }
-
-        const isMobile = window.matchMedia(`(max-width: ${SIDEBAR_CONFIG.BREAKPOINT}px)`).matches;
-        
-        if (isMobile) {
-            removeExistingSidebar();
-            return;
-        }
-
-        removeExistingSidebar();
-        injectSidebarStyles();
-        
+        sidebarInstance.isMobile = window.innerWidth <= SIDEBAR_CONFIG.BREAKPOINT;
+        const oldSidebar = document.querySelector('.sidebar-desktop');
+        if (oldSidebar) oldSidebar.remove();
+        if (sidebarInstance.isMobile) return;
         const sidebar = renderSidebar();
         document.body.insertBefore(sidebar, document.body.firstChild);
-        populateSidebarRecommendations();
+        populateRecommendations();
         initSidebarToggle();
         setActiveNavItem();
-        
-        // Aplicar layout inicial
-        adjustLayout(currentState === 'expanded');
-        
-        sidebarInitialized = true;
-        console.log('✅ Sidebar inicializada correctamente (modo SPA)');
+        sidebarInstance.initialized = true;
     }
 
-    // ==========================================================================
-    // INICIALIZACIÓN SEGURA PARA SPA
-    // ==========================================================================
-    
-    // Inicializar cuando el DOM esté listo
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initSidebar);
     } else {
         initSidebar();
     }
 
-    // Escuchar cambios de tamaño (responsive)
-    const mql = window.matchMedia(`(max-width: ${SIDEBAR_CONFIG.BREAKPOINT}px)`);
-    if (mql.addEventListener) {
-        mql.addEventListener('change', (e) => {
-            if (e.matches) {
-                removeExistingSidebar();
-            } else {
-                initSidebar();
-            }
-        });
-    } else {
-        mql.addListener((e) => {
-            if (e.matches) {
-                removeExistingSidebar();
-            } else {
-                initSidebar();
-            }
-        });
-    }
+    window.addEventListener('resize', () => {
+        const wasMobile = sidebarInstance.isMobile;
+        const isMobileNow = window.innerWidth <= SIDEBAR_CONFIG.BREAKPOINT;
+        if (wasMobile !== isMobileNow) {
+            sidebarInstance.isMobile = isMobileNow;
+            initSidebar();
+        }
+    });
 
-    // Escuchar navegación SPA para actualizar item activo
-    window.addEventListener('popstate', setActiveNavItem);
-    
-    // También escuchar posibles eventos personalizados de tu SPA
     document.addEventListener('spa-navigation', setActiveNavItem);
-    
-    // Exponer funciones útiles globalmente
+    window.addEventListener('popstate', setActiveNavItem);
+
     window.sidebarAPI = {
-        refresh: populateSidebarRecommendations,
+        refresh: populateRecommendations,
         setActive: setActiveNavItem,
         toggle: () => {
             const sidebar = document.getElementById('sidebarDesktop');
@@ -518,30 +425,18 @@
                 if (isCollapsed) {
                     sidebar.classList.remove('collapsed');
                     sidebar.classList.add('expanded');
-                    adjustLayout(true);
                 } else {
                     sidebar.classList.add('collapsed');
                     sidebar.classList.remove('expanded');
-                    adjustLayout(false);
                 }
-            }
-        },
-        expand: () => {
-            const sidebar = document.getElementById('sidebarDesktop');
-            if (sidebar && sidebar.classList.contains('collapsed')) {
-                sidebar.classList.remove('collapsed');
-                sidebar.classList.add('expanded');
-                adjustLayout(true);
-            }
-        },
-        collapse: () => {
-            const sidebar = document.getElementById('sidebarDesktop');
-            if (sidebar && sidebar.classList.contains('expanded')) {
-                sidebar.classList.add('collapsed');
-                sidebar.classList.remove('expanded');
-                adjustLayout(false);
+                localStorage.setItem('sidebar_state', isCollapsed ? 'expanded' : 'collapsed');
             }
         }
     };
 })();
 </script>
+
+<!-- Módulos JS -->
+<script type="module" src="/main.js"></script>
+</body>
+</html>
