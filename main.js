@@ -2,6 +2,18 @@
 import { DATA, renderFeed, renderGrid, renderEpisodio, renderSerie, renderCategoryPills } from './show.js';
 import { getEpisodioByDetailUrl, getSerieByUrl, getAllEpisodios } from './episodios.js';
 import './player.js';
+// 🆕 Función para actualizar las etiquetas canonical y alternate
+function updateCanonicalAndAlternate() {
+    const path = window.location.pathname;
+    const canonical = document.getElementById('canonicalLink');
+    const alternate = document.getElementById('alternateLink');
+    if (canonical) {
+        canonical.href = `https://media.baltaanay.org${path}`;
+    }
+    if (alternate) {
+        alternate.href = `https://app.baltaanay.org${path}`;
+    }
+}
 
 // Páginas especiales
 const PAGES = [
@@ -120,6 +132,8 @@ async function router() {
 
         // Actualizar categorías activas en el header
         updateActiveCategory();
+         // 🆕 Actualizar etiquetas canonical y alternate
+    updateCanonicalAndAlternate();
 
         // Disparar evento para que la sidebar actualice el item activo
         document.dispatchEvent(new Event('spa-navigation'));
