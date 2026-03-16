@@ -103,16 +103,15 @@ export function createVideoExpand(ep) {
 export function createListItem(ep, idx) {
     const inPlaylist = userStorage.playlist.has(ep.id);
     const addIcon = inPlaylist ? ICONS.added : ICONS.add;
-
+    
     return `
         <div class="list-item group flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors w-full"
              data-episodio-id="${ep.id}">
-            
-            <!-- Índice -->
+            <!-- Índice fijo -->
             <span class="text-gray-400 font-semibold w-6 text-center text-sm flex-shrink-0">${idx + 1}</span>
             
-            <!-- Cover -->
-            <div class="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer"
+            <!-- Cover pequeño -->
+            <div class="relative w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer"
                  onclick="window.goToDetail('${ep.detailUrl}')">
                 <img src="${ep.coverUrl}" class="w-full h-full object-cover" loading="lazy">
                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
@@ -121,19 +120,17 @@ export function createListItem(ep, idx) {
                 </div>
             </div>
             
-            <!-- Título y autor (en línea) -->
-            <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                    <h4 class="text-sm font-medium text-white truncate group-hover:text-blue-400 cursor-pointer"
-                        onclick="window.goToDetail('${ep.detailUrl}')">${ep.title}</h4>
-                    <span class="text-xs text-gray-400 truncate">${ep.author}</span>
-                </div>
+            <!-- Título + autor en columna, pero todo en una línea horizontal -->
+            <div class="flex-1 min-w-0 flex flex-col justify-center">
+                <h4 class="text-sm font-medium text-white truncate group-hover:text-blue-400 cursor-pointer"
+                    onclick="window.goToDetail('$$   {ep.detailUrl}')">   $${ep.title}</h4>
+                <p class="text-xs text-gray-400 truncate">${ep.author}</p>
             </div>
             
-            <!-- Botón añadir/quitar -->
+            <!-- Botón añadir siempre a la derecha -->
             <button onclick="window.handleAdd(event, '${ep.id}'); return false;"
                     class="flex-shrink-0 w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 flex items-center justify-center transition-colors">
-                <img src="${addIcon}" class="w-5 h-5" data-episodio-id="${ep.id}" data-added="${inPlaylist}">
+                <img src="$$   {addIcon}" class="w-5 h-5" data-episodio-id="   $${ep.id}" data-added="${inPlaylist}">
             </button>
         </div>`;
 }
