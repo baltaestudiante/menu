@@ -580,6 +580,7 @@ window.shareContent = async (title, url) => {
 
 window.handlePlay = function(e, episodioId) {
     e.stopPropagation();
+    e.stopImmediatePropagation();   // ← Línea extra de seguridad
     e.preventDefault();
     
     const ep = DATA.find(x => x.id === episodioId);
@@ -603,7 +604,7 @@ window.handlePlay = function(e, episodioId) {
             ep.description,
             ep.allowDownload
         );
-        // Si llega aquí → éxito → silencio
+        // Si llegó aquí → reproductor se abrió correctamente → silencio total
     } catch (err) {
         console.error('Error al reproducir:', err);
         showCustomAlert(ep.title, 'no está disponible por ahora.');
@@ -611,7 +612,6 @@ window.handlePlay = function(e, episodioId) {
 
     return false;
 };
-
 window.handleDl = function(e, episodioId) {
     e.stopPropagation();
     e.preventDefault();
