@@ -1,4 +1,4 @@
-// main.js - Router principal con soporte completo para SPA
+// main.js - Router principal con soporte completo para SPA (versión corregida)
 import { DATA, renderFeed, renderGrid, renderEpisodio, renderSerie, renderCategoryPills } from './show.js';
 import { getEpisodioByDetailUrl, getSerieByUrl } from './episodios.js';
 import './player.js';
@@ -11,6 +11,17 @@ const PAGES = [
 
 let lastScrollTop = 0;
 
+// Función para normalizar la ruta (quitar barra final y decodificar)
+function normalizePath(path) {
+    let normalized = path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path;
+    try {
+        normalized = decodeURIComponent(normalized);
+    } catch (e) {
+        // ignorar
+    }
+    return normalized;
+}
+
 function updateActiveCategory() {
     const path = window.location.pathname;
     let activeCat = 'Todos';
@@ -22,21 +33,22 @@ function updateActiveCategory() {
 
 async function router() {
     const path = window.location.pathname;
+    const normalizedPath = normalizePath(path);
     const searchParams = new URLSearchParams(window.location.search);
     const container = document.getElementById('content');
     const header = document.getElementById('main-header');
     const categoryFilters = document.getElementById('category-filters');
 
     try {
-        // Forzar visibilidad inicial de la barra de categorías (por si acaso)
         if (categoryFilters) categoryFilters.classList.remove('hidden');
 
-        if (path === '/') {
+        // 1. Páginas estáticas
+        if (normalizedPath === '/') {
             renderFeed(container);
             document.title = 'Balta Media · Conocimiento en acción';
         }
         else {
-            const page = PAGES.find(p => p.path === path);
+            const page = PAGES.find(p => p.path === normalizedPath);
             if (page) {
                 const module = await page.module();
                 if (page.path === '/buscar' && searchParams.has('q')) {
@@ -46,10 +58,11 @@ async function router() {
                 } else {
                     module.render(container);
                 }
-                document.title = `${path.slice(1).charAt(0).toUpperCase() + path.slice(2)} · Balta Media`;
+                document.title = `${normalizedPath.slice(1).charAt(0).toUpperCase() + normalizedPath.slice(2)} · Balta Media`;
             }
-            else if (path.startsWith('/categoria/')) {
-                const cat = decodeURIComponent(path.replace('/categoria/', ''));
+            // 2. Categorías
+            else if (normalizedPath.startsWith('/categoria/')) {
+                const cat = decodeURIComponent(normalizedPath.replace('/categoria/', ''));
                 const buscarModule = await import('./buscar.js');
                 if (buscarModule.renderCategory) {
                     buscarModule.renderCategory(container, cat);
@@ -59,51 +72,50 @@ async function router() {
                 }
                 document.title = `${cat} · Balta Media`;
             }
-            // === REEMPLAZA ESTE BLOQUE EN MAIN.JS ===
-else {
-    // PRIMERO buscamos episodio (esto arregla todo)
-    const episodio = getEpisodioByDetailUrl(path);
-    if (episodio) {
-        renderEpisodio(container, episodio.id);
-        document.title = `${episodio.title} · Balta Media`;
-        return;
-    }
+            // 3. Serie (prioridad sobre episodio)
+            else {
+                const serie = getSerieByUrl(normalizedPath);
+                if (serie) {
+                    renderSerie(container, normalizedPath);
+                    document.title = `${serie.titulo_serie} · Balta Media`;
+                    return;
+                }
 
-    // Luego serie
-    const serie = getSerieByUrl(path);
-    if (serie) {
-        renderSerie(container, path);
-        document.title = `${serie.titulo_serie} · Balta Media`;
-        return;
-    }
+                // 4. Episodio
+                const episodio = getEpisodioByDetailUrl(normalizedPath);
+                if (episodio) {
+                    renderEpisodio(container, episodio.id);
+                    document.title = `${episodio.title} · Balta Media`;
+                    return;
+                }
 
-    // Novedades
-    else if (path === '/novedades') {
-        const sorted = [...DATA].sort((a, b) => new Date(b.date) - new Date(a.date));
-        const recientes = sorted.slice(0, 20);
-        const aleatorios = [...DATA].sort(() => 0.5 - Math.random()).slice(0, 10);
-        const combined = [...new Set([...recientes, ...aleatorios])];
-        renderGrid(container, combined, 'Novedades y Recomendaciones');
-        document.title = 'Novedades · Balta Media';
-    }
-    // 404
-    else {
-        const module404 = await import('./404.js');
-        module404.render(container);
-        document.title = 'Página no encontrada · Balta Media';
-        if (module404.header === false) {
-            header.classList.add('hidden');
-            categoryFilters.classList.add('hidden');
-        }
-    }
-}
+                // 5. Novedades
+                else if (normalizedPath === '/novedades') {
+                    const sorted = [...DATA].sort((a, b) => new Date(b.date) - new Date(a.date));
+                    const recientes = sorted.slice(0, 20);
+                    const aleatorios = [...DATA].sort(() => 0.5 - Math.random()).slice(0, 10);
+                    const combined = [...new Set([...recientes, ...aleatorios])];
+                    renderGrid(container, combined, 'Novedades y Recomendaciones');
+                    document.title = 'Novedades · Balta Media';
+                }
+                // 6. 404
+                else {
+                    const module404 = await import('./404.js');
+                    module404.render(container);
+                    document.title = 'Página no encontrada · Balta Media';
+                    if (module404.header === false) {
+                        header.classList.add('hidden');
+                        categoryFilters.classList.add('hidden');
+                    }
+                }
+            }
         }
 
         updateActiveCategory();
         document.dispatchEvent(new Event('spa-navigation'));
 
         if (window.sidebarAPI) {
-            if (path === '/' || path === '/novedades') window.sidebarAPI.refresh();
+            if (normalizedPath === '/' || normalizedPath === '/novedades') window.sidebarAPI.refresh();
             window.sidebarAPI.setActive();
         }
 
