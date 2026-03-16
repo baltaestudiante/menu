@@ -1,4 +1,4 @@
-// main.js - Router principal con soporte completo para SPA (versión corregida)
+// main.js - Router principal con soporte completo para SPA (versión corregida y mejorada)
 import { DATA, renderFeed, renderGrid, renderEpisodio, renderSerie, renderCategoryPills } from './show.js';
 import { getEpisodioByDetailUrl, getSerieByUrl } from './episodios.js';
 import './player.js';
@@ -11,17 +11,17 @@ const PAGES = [
 
 let lastScrollTop = 0;
 
+// Función para normalizar la ruta (quitar barra final y decodificar)
 function normalizePath(path) {
     let normalized = path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path;
     try {
         normalized = decodeURIComponent(normalized);
-    } catch (e) {}
+    } catch (e) {
+        // ignorar
+    }
     return normalized;
 }
 
-// Dentro de router():
-const normalizedPath = normalizePath(path);
-// Luego usa normalizedPath en lugar de path para buscar serie y episodio
 function updateActiveCategory() {
     const path = window.location.pathname;
     let activeCat = 'Todos';
