@@ -13,7 +13,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="https://media.baltaanay.org/web/image/885-f3d79ca9/xhbalta-aula.png">
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="/styles.css">
-   
+  
     <!-- ESTILOS BASE (igual que antes) -->
     <style id="sidebar-base-styles">
         * {
@@ -27,15 +27,13 @@
             overflow: hidden;
             background: #050505;
         }
-
         body {
             display: grid;
             grid-template-columns: auto 1fr;
-            grid-template-areas: 
+            grid-template-areas:
                 "sidebar main-area";
             grid-template-rows: 1fr;
         }
-
         /* SIDEBAR */
         .sidebar-desktop {
             grid-area: sidebar;
@@ -54,7 +52,6 @@
             min-width: 70px;
         }
         .sidebar-desktop::-webkit-scrollbar { display: none; }
-
         .sidebar-desktop.expanded {
             width: 220px;
             min-width: 220px;
@@ -65,11 +62,9 @@
                 min-width: 250px;
             }
         }
-
         @media (max-width: 768px) {
             .sidebar-desktop { display: none !important; }
         }
-
         .sidebar-toggle {
             display: flex;
             justify-content: flex-end;
@@ -80,7 +75,6 @@
         }
         .sidebar-toggle svg { width: 24px; height: 24px; fill: white; transition: transform 0.2s; }
         .sidebar-desktop.expanded .sidebar-toggle svg { transform: rotate(180deg); }
-
         .sidebar-nav {
             display: flex;
             flex-direction: column;
@@ -105,7 +99,6 @@
         .sidebar-nav-item span { font-size: 14px; font-weight: 500; }
         .sidebar-desktop:not(.expanded) .sidebar-nav-item span { display: none; }
         .sidebar-desktop:not(.expanded) .sidebar-rec-section { display: none; }
-
         .sidebar-rec-section {
             padding: 0 8px;
             margin-top: 20px;
@@ -132,7 +125,6 @@
         }
         .sidebar-rec-header svg { width: 16px; height: 16px; fill: white; }
         .sidebar-rec-list { display: flex; flex-direction: column; gap: 12px; }
-
         .sidebar-rec-item {
             display: flex;
             align-items: center;
@@ -154,7 +146,6 @@
         .sidebar-rec-item-info { flex: 1; min-width: 0; }
         .sidebar-rec-item-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sidebar-rec-item-author { font-size: 11px; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
         .sidebar-rec-play-btn {
             background: none;
             border: none;
@@ -169,17 +160,15 @@
         }
         .sidebar-rec-play-btn:hover { background: rgba(255,255,255,0.2); }
         .sidebar-rec-play-btn svg { width: 18px; height: 18px; fill: white; }
-
         /* MAIN AREA */
         .main-area {
             grid-area: main-area;
             display: flex;
             flex-direction: column;
-         height: 100%;                    /* ← cambiar de 100vh a 100% */
-    min-height: 100vh;               /* ← agregar esto */
-    overflow: hidden;                /* ok, se mantiene */
-}
-
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
         /* HEADER Y FILTROS */
         .header-container {
             position: sticky;
@@ -190,41 +179,31 @@
             background: rgba(5,5,5,0.96);
             backdrop-filter: blur(12px);
         }
-
         .header-container.hidden {
             transform: translateY(-100%);
         }
-
         #main-header {
             background: transparent;
             border-bottom: 1px solid rgba(255,255,255,0.07);
         }
-
         #main-header > div {
             padding: 0.75rem 1rem;
         }
-
         #category-filters {
             background: rgba(5,5,5,0.96);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(255,255,255,0.07);
             flex-shrink: 0;
         }
-
         #category-filters > div {
             padding: 0.5rem 1rem;
         }
-
         #content {
-    flex: 1 1 auto;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 1.25rem 1rem;
-    /* agregar estas dos líneas */
-    min-height: 0;                   /* muy importante para flex */
-    box-sizing: border-box;
-}
-
+            flex: 1 1 auto;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 1.25rem 1rem;
+        }
         @media (max-width: 768px) {
             body {
                 grid-template-columns: 1fr;
@@ -234,13 +213,10 @@
     </style>
 </head>
 <body class="bg-[#050505] text-white font-[Plus_Jakarta_Sans]">
-
 <!-- Sidebar (se genera dinámicamente con JS) -->
 <aside class="sidebar-desktop collapsed" id="sidebarDesktop"></aside>
-
 <!-- Área principal -->
 <div class="main-area">
-
     <!-- Header + Filtros - Contenedor unificado para sticky -->
     <div class="header-container" id="headerContainer">
         <!-- Header -->
@@ -261,7 +237,6 @@
                 </div>
             </div>
         </header>
-
         <!-- Filtros / categorías -->
         <div id="category-filters">
             <div class="overflow-x-auto no-scrollbar">
@@ -269,15 +244,11 @@
             </div>
         </div>
     </div>
-
     <!-- Contenido con scroll principal -->
     <main id="content"></main>
-
 </div>
-
 <!-- Reproductor flotante (estructura vacía, player.js lo llena) -->
 <div id="floating-player" class="fixed bottom-0 left-0 right-0 bg-[#1a1a1a] border-t border-[#333] p-3 flex items-center justify-between z-[10000] backdrop-blur hidden"></div>
-
 <!-- Modal de error -->
 <div id="errorModal" class="fixed inset-0 z-[10000] flex items-center justify-center hidden" style="background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);">
     <div class="bg-[#1e1e2f] rounded-2xl max-w-md w-full p-6 border border-white/10 shadow-2xl">
@@ -290,11 +261,9 @@
         </div>
     </div>
 </div>
-
 <!-- Script sidebar (NO EL ROUTER) -->
 <script type="module">
 import { episodios, getSerieById } from '/episodios.js';
-
 (function() {
     const SIDEBAR_CONFIG = { BREAKPOINT: 768 };
     let sidebarInstance = {
@@ -302,22 +271,18 @@ import { episodios, getSerieById } from '/episodios.js';
         currentState: localStorage.getItem('sidebar_state') || 'collapsed',
         isMobile: window.innerWidth <= SIDEBAR_CONFIG.BREAKPOINT
     };
-
     function getRandomEpisodes(count = 12) {
         const shuffled = [...episodios].sort(() => 0.5 - Math.random());
         return shuffled.slice(0, count);
     }
-
     function renderSidebar() {
         const sidebar = document.createElement('aside');
         sidebar.className = `sidebar-desktop ${sidebarInstance.currentState}`;
         sidebar.id = 'sidebarDesktop';
-
         const toggle = document.createElement('div');
         toggle.className = 'sidebar-toggle';
         toggle.id = 'sidebarDesktopToggle';
         toggle.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>';
-
         const nav = document.createElement('div');
         nav.className = 'sidebar-nav';
         nav.innerHTML = `
@@ -337,7 +302,6 @@ import { episodios, getSerieById } from '/episodios.js';
                 <img src="https://nikichitonjesus3.odoo.com/web/image/453-f4d8c1eb/user.png" alt="Usuario" loading="lazy"><span>Portal</span>
             </a>
         `;
-
         const recSection = document.createElement('div');
         recSection.className = 'sidebar-rec-section';
         recSection.innerHTML = `
@@ -346,26 +310,20 @@ import { episodios, getSerieById } from '/episodios.js';
             </div>
             <div class="sidebar-rec-list" id="sidebarRecList"></div>
         `;
-
         sidebar.appendChild(toggle);
         sidebar.appendChild(nav);
         sidebar.appendChild(recSection);
         return sidebar;
     }
-
     function populateRecommendations() {
         const container = document.getElementById('sidebarRecList');
         if (!container) return;
-
         container.innerHTML = '';
-
         const selected = getRandomEpisodes(12);
-
         if (!selected.length) {
             container.innerHTML = '<div style="color:#aaa; padding:8px;">No hay episodios disponibles</div>';
             return;
         }
-
         selected.forEach(ep => {
             const serie = getSerieById(ep.seriesid) || {};
             const item = document.createElement('div');
@@ -380,7 +338,6 @@ import { episodios, getSerieById } from '/episodios.js';
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 </button>
             `;
-
             const btn = item.querySelector('button');
             btn.addEventListener('click', e => {
                 e.preventDefault();
@@ -391,7 +348,6 @@ import { episodios, getSerieById } from '/episodios.js';
                     window.router();
                 }
             });
-
             item.addEventListener('click', e => {
                 if (e.target.tagName !== 'BUTTON') {
                     e.preventDefault();
@@ -402,11 +358,9 @@ import { episodios, getSerieById } from '/episodios.js';
                     }
                 }
             });
-
             container.appendChild(item);
         });
     }
-
     function setActiveNavItem() {
         const currentPath = window.location.pathname;
         document.querySelectorAll('.sidebar-nav-item').forEach(item => {
@@ -418,15 +372,12 @@ import { episodios, getSerieById } from '/episodios.js';
             );
         });
     }
-
     function initSidebarToggle() {
         const sidebar = document.getElementById('sidebarDesktop');
         const toggle = document.getElementById('sidebarDesktopToggle');
         if (!sidebar || !toggle) return;
-
         const newToggle = toggle.cloneNode(true);
         toggle.parentNode.replaceChild(newToggle, toggle);
-
         newToggle.addEventListener('click', e => {
             e.stopPropagation();
             e.preventDefault();
@@ -441,30 +392,23 @@ import { episodios, getSerieById } from '/episodios.js';
             localStorage.setItem('sidebar_state', isCollapsed ? 'expanded' : 'collapsed');
         });
     }
-
     function initSidebar() {
         sidebarInstance.isMobile = window.innerWidth <= SIDEBAR_CONFIG.BREAKPOINT;
         const oldSidebar = document.querySelector('.sidebar-desktop');
         if (oldSidebar) oldSidebar.remove();
-
         if (sidebarInstance.isMobile) return;
-
         const sidebar = renderSidebar();
         document.body.insertBefore(sidebar, document.body.firstChild);
-
         populateRecommendations();
         initSidebarToggle();
         setActiveNavItem();
-
         sidebarInstance.initialized = true;
     }
-
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initSidebar);
     } else {
         initSidebar();
     }
-
     window.addEventListener('resize', () => {
         const wasMobile = sidebarInstance.isMobile;
         const isMobileNow = window.innerWidth <= SIDEBAR_CONFIG.BREAKPOINT;
@@ -473,10 +417,8 @@ import { episodios, getSerieById } from '/episodios.js';
             initSidebar();
         }
     });
-
     document.addEventListener('spa-navigation', setActiveNavItem);
     window.addEventListener('popstate', setActiveNavItem);
-
     window.sidebarAPI = {
         refresh: populateRecommendations,
         setActive: setActiveNavItem,
@@ -497,9 +439,7 @@ import { episodios, getSerieById } from '/episodios.js';
     };
 })();
 </script>
-
 <!-- Cargar el router principal (main.js) -->
 <script type="module" src="/main.js"></script>
-
 </body>
 </html>
