@@ -11,17 +11,17 @@ const PAGES = [
 
 let lastScrollTop = 0;
 
-// Función para normalizar la ruta (quitar barra final y decodificar)
 function normalizePath(path) {
     let normalized = path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path;
     try {
         normalized = decodeURIComponent(normalized);
-    } catch (e) {
-        // ignorar
-    }
+    } catch (e) {}
     return normalized;
 }
 
+// Dentro de router():
+const normalizedPath = normalizePath(path);
+// Luego usa normalizedPath en lugar de path para buscar serie y episodio
 function updateActiveCategory() {
     const path = window.location.pathname;
     let activeCat = 'Todos';
