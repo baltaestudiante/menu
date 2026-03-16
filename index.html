@@ -175,10 +175,10 @@
             grid-area: main-area;
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-            position: relative;
-        }
+         height: 100%;                    /* ← cambiar de 100vh a 100% */
+    min-height: 100vh;               /* ← agregar esto */
+    overflow: hidden;                /* ok, se mantiene */
+}
 
         /* HEADER Y FILTROS */
         .header-container {
@@ -216,11 +216,14 @@
         }
 
         #content {
-            flex: 1 1 auto;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            padding: 1.25rem 1rem;
-        }
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 1.25rem 1rem;
+    /* agregar estas dos líneas */
+    min-height: 0;                   /* muy importante para flex */
+    box-sizing: border-box;
+}
 
         @media (max-width: 768px) {
             body {
