@@ -14,7 +14,7 @@
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="/styles.css">
    
-    <!-- ESTILOS BASE - SIDEBAR FIJA + HEADER / FILTROS CONTROLADOS -->
+    <!-- ESTILOS BASE -->
     <style id="sidebar-base-styles">
         * {
             box-sizing: border-box;
@@ -36,7 +36,7 @@
             grid-template-rows: 1fr;
         }
 
-        /* SIDEBAR – FIJA EN PANTALLA, SIEMPRE VISIBLE, SCROLL PROPIO */
+        /* SIDEBAR */
         .sidebar-desktop {
             grid-area: sidebar;
             background: #0F0F0F;
@@ -170,9 +170,7 @@
         .sidebar-rec-play-btn:hover { background: rgba(255,255,255,0.2); }
         .sidebar-rec-play-btn svg { width: 18px; height: 18px; fill: white; }
 
-        /* ──────────────────────────────────────────────── */
-        /* CONTENEDOR PRINCIPAL (header + filtros + contenido) */
-        /* ──────────────────────────────────────────────── */
+        /* MAIN AREA */
         .main-area {
             grid-area: main-area;
             display: flex;
@@ -181,7 +179,6 @@
             overflow: hidden;
         }
 
-        /* HEADER – se oculta al bajar scroll */
         #main-header {
             position: sticky;
             top: 0;
@@ -198,7 +195,6 @@
             padding: 0.75rem 1rem;
         }
 
-        /* BARRA DE CATEGORÍAS – siempre visible */
         #category-filters {
             position: sticky;
             z-index: 55;
@@ -212,12 +208,10 @@
             padding: 0.5rem 1rem;
         }
 
-        /* Cuando header está oculto → filtros pegan arriba */
         #main-header.hidden ~ #category-filters {
             top: 0;
         }
 
-        /* CONTENEDOR PRINCIPAL – aquí va el scroll principal */
         #content {
             flex: 1 1 auto;
             overflow-y: auto;
@@ -230,9 +224,6 @@
                 grid-template-columns: 1fr;
                 grid-template-areas: "main-area";
             }
-            .main-area {
-                height: 100vh;
-            }
         }
     </style>
 </head>
@@ -241,10 +232,10 @@
 <!-- Sidebar -->
 <aside class="sidebar-desktop collapsed" id="sidebarDesktop"></aside>
 
-<!-- Área principal: header + filtros + contenido -->
+<!-- Área principal -->
 <div class="main-area">
 
-    <!-- Header principal -->
+    <!-- Header -->
     <header id="main-header">
         <div class="flex items-center justify-between">
             <a href="/" class="flex items-center gap-2" data-link>
@@ -263,21 +254,21 @@
         </div>
     </header>
 
-    <!-- Barra de categorías -->
+    <!-- Filtros / categorías -->
     <div id="category-filters">
         <div class="overflow-x-auto no-scrollbar">
             <div class="flex items-center gap-2 sm:gap-3" id="category-pills"></div>
         </div>
     </div>
 
-    <!-- Contenedor principal (aquí va el scroll principal) -->
+    <!-- Contenido con scroll -->
     <main id="content"></main>
 
 </div>
 
 <!-- Reproductor flotante -->
 <div id="floating-player" class="fixed bottom-0 left-0 right-0 bg-[#1a1a1a] border-t border-[#333] p-3 flex items-center justify-between z-[10000] backdrop-blur hidden">
-    <!-- El contenido lo genera player.js -->
+    <!-- Generado por player.js -->
 </div>
 
 <!-- Modal de error -->
@@ -293,13 +284,8 @@
     </div>
 </div>
 
-<!-- Botón flotante móvil para abrir reproductor -->
-<button id="openPlayerBtn" class="fixed bottom-20 right-4 z-[1002] bg-[#7b2eda] rounded-full p-3 shadow-lg flex items-center gap-2 lg:hidden">
-    <img src="https://nikichitonjes-home.odoo.com/web/image/478-0e3df8d3/reanudar.gif" alt="Reproductor" class="w-6 h-6">
-    <span class="text-sm font-bold">Escuchar</span>
-</button>
 
-<!-- Script de la barra lateral – con episodios.js + SPA -->
+<!-- Script sidebar -->
 <script type="module">
 import { episodios, getSerieById } from '/episodios.js';
 
@@ -506,9 +492,9 @@ import { episodios, getSerieById } from '/episodios.js';
 })();
 </script>
 
-<!-- Módulos JS -->
+<!-- Script principal (router + header scroll behavior corregido) -->
 <script type="module">
-    // main.js - con corrección del scroll listener para #content
+    // main.js - con header hide-on-scroll mejorado
     import { DATA, renderFeed, renderGrid, renderEpisodio, renderSerie, renderCategoryPills } from './show.js';
     import { getEpisodioByDetailUrl, getSerieByUrl } from './episodios.js';
     import './player.js';
@@ -519,7 +505,11 @@ import { episodios, getSerieById } from '/episodios.js';
         { path: '/buscar', module: () => import('./buscar.js'), header: true }
     ];
 
+    // Variables para el control preciso del header
     let lastScrollTop = 0;
+    let isHeaderVisible = true;           // importante: inicia visible
+    const SCROLL_THRESHOLD = 120;         // px para empezar a considerar ocultar
+    const DELTA_THRESHOLD = 4;            // ignora movimientos muy pequeños
 
     function updateActiveCategory() {
         const path = window.location.pathname;
@@ -530,29 +520,91 @@ import { episodios, getSerieById } from '/episodios.js';
         renderCategoryPills(activeCat);
     }
 
-    function toggleHeader(show = true) {
-        const header = document.getElementById('main-header');
-        if (!header) return;
-        header.classList.toggle('hidden', !show);
-    }
-
     async function router() {
         const path = window.location.pathname;
         const searchParams = new URLSearchParams(window.location.search);
         const container = document.getElementById('content');
 
         try {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Resetear scroll al cambiar página
+            document.getElementById('content').scrollTop = 0;
+            lastScrollTop = 0;
+            isHeaderVisible = true;
+            document.getElementById('main-header')?.classList.remove('hidden');
 
             if (path === '/') {
                 renderFeed(container);
                 document.title = 'Balta Media · Conocimiento en acción';
             }
             else if (path === '/novedades') {
-                // ... (tu código de novedades sin cambios)
+                const sorted = [...DATA].sort((a, b) => new Date(b.date) - new Date(a.date));
+                const recientes = sorted.slice(0, 20);
+                const aleatorios = [...DATA].sort(() => 0.5 - Math.random()).slice(0, 10);
+                const combined = [...new Set([...recientes, ...aleatorios])];
+
+                container.innerHTML = `
+                    <div class="mb-6 flex items-center justify-between">
+                        <h1 class="text-2xl font-bold">Novedades y Recomendaciones</h1>
+                        <button id="closeNovedadesBtn" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm font-medium transition">
+                            Volver al inicio
+                        </button>
+                    </div>
+                `;
+                const gridContainer = document.createElement('div');
+                gridContainer.id = 'novedades-grid';
+                container.appendChild(gridContainer);
+
+                renderGrid(gridContainer, combined, '');
+
+                document.title = 'Novedades · Balta Media';
+
+                document.getElementById('closeNovedadesBtn')?.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    window.history.pushState(null, null, '/');
+                    router();
+                });
             }
             else {
-                // ... (resto del router sin cambios)
+                const page = PAGES.find(p => p.path === path);
+                if (page) {
+                    const module = await page.module();
+                    if (page.path === '/buscar' && searchParams.has('q')) {
+                        const query = searchParams.get('q');
+                        if (module.renderSearch) module.renderSearch(container, query);
+                        else module.render(container);
+                    } else {
+                        module.render(container);
+                    }
+                    document.title = `${path.slice(1).charAt(0).toUpperCase() + path.slice(2)} · Balta Media`;
+                }
+                else if (path.startsWith('/categoria/')) {
+                    const cat = decodeURIComponent(path.replace('/categoria/', ''));
+                    const buscarModule = await import('./buscar.js');
+                    if (buscarModule.renderCategory) {
+                        buscarModule.renderCategory(container, cat);
+                    } else {
+                        const categoryEpisodes = DATA.filter(ep => ep.categories && ep.categories.includes(cat));
+                        renderGrid(container, categoryEpisodes, cat);
+                    }
+                    document.title = `${cat} · Balta Media`;
+                }
+                else {
+                    const serie = getSerieByUrl(path);
+                    if (serie) {
+                        renderSerie(container, path);
+                        document.title = `${serie.titulo_serie} · Balta Media`;
+                    } else {
+                        const episodio = getEpisodioByDetailUrl(path);
+                        if (episodio) {
+                            renderEpisodio(container, episodio.id);
+                            document.title = `${episodio.title} · Balta Media`;
+                        } else {
+                            const module404 = await import('./404.js');
+                            module404.render(container);
+                            document.title = 'Página no encontrada · Balta Media';
+                        }
+                    }
+                }
             }
 
             updateActiveCategory();
@@ -569,11 +621,21 @@ import { episodios, getSerieById } from '/episodios.js';
 
         } catch (error) {
             console.error('Error en router:', error);
-            // ... (tu manejo de error)
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
+                    <span class="text-6xl mb-4">😵</span>
+                    <h2 class="text-2xl font-bold text-white mb-2">Algo salió mal</h2>
+                    <p class="text-gray-300 mb-6">${error.message || 'Error al cargar la página'}</p>
+                    <button onclick="window.history.pushState(null,null,'/'); router();"
+                            class="bg-[#7b2eda] hover:bg-[#8f3ef0] text-white font-bold px-6 py-3 rounded-full transition">
+                        Volver al inicio
+                    </button>
+                </div>
+            `;
         }
     }
 
-    // Navegación SPA ...
+    // Navegación SPA
     document.addEventListener('click', e => {
         const link = e.target.closest('a[data-link]');
         if (link) {
@@ -582,7 +644,6 @@ import { episodios, getSerieById } from '/episodios.js';
             if (href && !href.startsWith('http')) {
                 window.history.pushState(null, null, href);
                 router();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (href) {
                 window.open(href, '_blank');
             }
@@ -591,31 +652,60 @@ import { episodios, getSerieById } from '/episodios.js';
 
     window.addEventListener('popstate', router);
 
-    // Ocultar/mostrar header SOLO con scroll en #content
-    document.getElementById('content')?.addEventListener('scroll', () => {
-        const st = document.getElementById('content').scrollTop;
-        const header = document.getElementById('main-header');
-        if (!header) return;
+    // Control mejorado del header (solo dentro de #content)
+    const contentElement = document.getElementById('content');
+    if (contentElement) {
+        contentElement.addEventListener('scroll', () => {
+            const currentScroll = contentElement.scrollTop;
 
-        if (st > lastScrollTop && st > 100) {
-            header.classList.add('hidden');
-        } else {
-            header.classList.remove('hidden');
-        }
-        lastScrollTop = st <= 0 ? 0 : st;
-    });
+            // Si estamos en el tope → siempre visible
+            if (currentScroll <= 5) {
+                if (!isHeaderVisible) {
+                    document.getElementById('main-header')?.classList.remove('hidden');
+                    isHeaderVisible = true;
+                }
+                lastScrollTop = 0;
+                return;
+            }
 
-    // Observer ...
+            const delta = currentScroll - lastScrollTop;
+
+            // Ignorar micro-movimientos
+            if (Math.abs(delta) < DELTA_THRESHOLD) {
+                lastScrollTop = currentScroll;
+                return;
+            }
+
+            if (delta > 0) {
+                // ↓ hacia abajo
+                if (isHeaderVisible && currentScroll > SCROLL_THRESHOLD) {
+                    document.getElementById('main-header')?.classList.add('hidden');
+                    isHeaderVisible = false;
+                }
+            } else {
+                // ↑ hacia arriba → mostrar
+                if (!isHeaderVisible) {
+                    document.getElementById('main-header')?.classList.remove('hidden');
+                    isHeaderVisible = true;
+                }
+            }
+
+            lastScrollTop = currentScroll;
+        });
+    }
+
+    // Observer para cambios dinámicos
     const observer = new MutationObserver(() => {
         if (window.sidebarAPI) window.sidebarAPI.setActive();
         if (window.updatePlayerVisibility) window.updatePlayerVisibility();
     });
-    const content = document.getElementById('content');
-    if (content) observer.observe(content, { childList: true, subtree: true });
+    if (contentElement) {
+        observer.observe(contentElement, { childList: true, subtree: true });
+    }
 
     window.router = router;
     router();
-    console.log('✅ Main.js optimizado con header hide-on-scroll');
+    console.log('Balta Media SPA inicializado – header scroll corregido');
 </script>
 
 </body>
