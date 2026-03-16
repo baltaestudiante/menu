@@ -186,7 +186,7 @@
             background: rgba(5,5,5,0.88);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(255,255,255,0.07);
-            transition: transform 0.28s cubic-bezier(0.25, 0.1, 0.25, 1);
+            transition: transform 0.32s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
         #main-header.hidden {
             transform: translateY(-100%);
@@ -202,7 +202,7 @@
             backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(255,255,255,0.07);
             flex-shrink: 0;
-            transition: top 0.28s ease;
+            transition: top 0.32s ease;
         }
         #category-filters > div {
             padding: 0.5rem 1rem;
@@ -261,7 +261,7 @@
         </div>
     </div>
 
-    <!-- Contenido con scroll -->
+    <!-- Contenido con scroll principal -->
     <main id="content"></main>
 
 </div>
@@ -492,9 +492,8 @@ import { episodios, getSerieById } from '/episodios.js';
 })();
 </script>
 
-<!-- Script principal (router + header scroll behavior corregido) -->
+<!-- Script principal (router + header scroll behavior CORREGIDO) -->
 <script type="module">
-    // main.js - con header hide-on-scroll mejorado
     import { DATA, renderFeed, renderGrid, renderEpisodio, renderSerie, renderCategoryPills } from './show.js';
     import { getEpisodioByDetailUrl, getSerieByUrl } from './episodios.js';
     import './player.js';
@@ -505,11 +504,12 @@ import { episodios, getSerieById } from '/episodios.js';
         { path: '/buscar', module: () => import('./buscar.js'), header: true }
     ];
 
-    // Variables para el control preciso del header
+    // === CONTROL PRECISO DEL HEADER (solo scroll del #content) ===
     let lastScrollTop = 0;
-    let isHeaderVisible = true;           // importante: inicia visible
-    const SCROLL_THRESHOLD = 120;         // px para empezar a considerar ocultar
-    const DELTA_THRESHOLD = 4;            // ignora movimientos muy pequeños
+    let isHeaderVisible = true;
+    const SCROLL_THRESHOLD = 180;        // distancia mínima para considerar ocultar
+    const DOWN_DELTA_MIN = 40;           // movimiento claro hacia abajo necesario para ocultar
+    const UP_DELTA_MIN = -20;            // movimiento hacia arriba para mostrar
 
     function updateActiveCategory() {
         const path = window.location.pathname;
@@ -526,8 +526,8 @@ import { episodios, getSerieById } from '/episodios.js';
         const container = document.getElementById('content');
 
         try {
-            // Resetear scroll al cambiar página
-            document.getElementById('content').scrollTop = 0;
+            // Reset total al cambiar página
+            container.scrollTop = 0;
             lastScrollTop = 0;
             isHeaderVisible = true;
             document.getElementById('main-header')?.classList.remove('hidden');
@@ -553,7 +553,6 @@ import { episodios, getSerieById } from '/episodios.js';
                 const gridContainer = document.createElement('div');
                 gridContainer.id = 'novedades-grid';
                 container.appendChild(gridContainer);
-
                 renderGrid(gridContainer, combined, '');
 
                 document.title = 'Novedades · Balta Media';
@@ -652,16 +651,18 @@ import { episodios, getSerieById } from '/episodios.js';
 
     window.addEventListener('popstate', router);
 
-    // Control mejorado del header (solo dentro de #content)
+    // === SCROLL DEL CONTENIDO PRINCIPAL (solo #content) ===
     const contentElement = document.getElementById('content');
     if (contentElement) {
         contentElement.addEventListener('scroll', () => {
             const currentScroll = contentElement.scrollTop;
+            const header = document.getElementById('main-header');
+            if (!header) return;
 
-            // Si estamos en el tope → siempre visible
-            if (currentScroll <= 5) {
+            // Siempre visible en el tope
+            if (currentScroll <= 10) {
                 if (!isHeaderVisible) {
-                    document.getElementById('main-header')?.classList.remove('hidden');
+                    header.classList.remove('hidden');
                     isHeaderVisible = true;
                 }
                 lastScrollTop = 0;
@@ -670,22 +671,23 @@ import { episodios, getSerieById } from '/episodios.js';
 
             const delta = currentScroll - lastScrollTop;
 
-            // Ignorar micro-movimientos
-            if (Math.abs(delta) < DELTA_THRESHOLD) {
+            // Solo actuar si hay movimiento claro
+            if (Math.abs(delta) < 15) {
                 lastScrollTop = currentScroll;
                 return;
             }
 
-            if (delta > 0) {
-                // ↓ hacia abajo
-                if (isHeaderVisible && currentScroll > SCROLL_THRESHOLD) {
-                    document.getElementById('main-header')?.classList.add('hidden');
+            if (delta > DOWN_DELTA_MIN && currentScroll > SCROLL_THRESHOLD) {
+                // Movimiento claro hacia abajo → ocultar
+                if (isHeaderVisible) {
+                    header.classList.add('hidden');
                     isHeaderVisible = false;
                 }
-            } else {
-                // ↑ hacia arriba → mostrar
+            } 
+            else if (delta < UP_DELTA_MIN) {
+                // Movimiento claro hacia arriba → mostrar
                 if (!isHeaderVisible) {
-                    document.getElementById('main-header')?.classList.remove('hidden');
+                    header.classList.remove('hidden');
                     isHeaderVisible = true;
                 }
             }
@@ -694,7 +696,7 @@ import { episodios, getSerieById } from '/episodios.js';
         });
     }
 
-    // Observer para cambios dinámicos
+    // Observer
     const observer = new MutationObserver(() => {
         if (window.sidebarAPI) window.sidebarAPI.setActive();
         if (window.updatePlayerVisibility) window.updatePlayerVisibility();
@@ -705,7 +707,7 @@ import { episodios, getSerieById } from '/episodios.js';
 
     window.router = router;
     router();
-    console.log('Balta Media SPA inicializado – header scroll corregido');
+    console.log('✅ Balta Media SPA – Header solo se oculta con movimiento claro hacia abajo');
 </script>
 
 </body>
