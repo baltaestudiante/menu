@@ -59,32 +59,44 @@ async function router() {
                 }
                 document.title = `${cat} · Balta Media`;
             }
-            else {
-                const serie = getSerieByUrl(path);
-                if (serie) {
-                    renderSerie(container, path);
-                    document.title = `${serie.titulo_serie} · Balta Media`;
-                } else {
-                    const episodio = getEpisodioByDetailUrl(path);
-                    if (episodio) {
-                        renderEpisodio(container, episodio.id);
-                        document.title = `${episodio.title} · Balta Media`;
-                    }
-                    else if (path === '/novedades') {
-                        const sorted = [...DATA].sort((a, b) => new Date(b.date) - new Date(a.date));
-                        const recientes = sorted.slice(0, 20);
-                        const aleatorios = [...DATA].sort(() => 0.5 - Math.random()).slice(0, 10);
-                        const combined = [...new Set([...recientes, ...aleatorios])];
-                        renderGrid(container, combined, 'Novedades y Recomendaciones');
-                        document.title = 'Novedades · Balta Media';
-                    }
-                    else {
-                        const module404 = await import('./404.js');
-                        module404.render(container);
-                        document.title = 'Página no encontrada · Balta Media';
-                    }
-                }
-            }
+            // === REEMPLAZA ESTE BLOQUE EN MAIN.JS ===
+else {
+    // PRIMERO buscamos episodio (esto arregla todo)
+    const episodio = getEpisodioByDetailUrl(path);
+    if (episodio) {
+        renderEpisodio(container, episodio.id);
+        document.title = `${episodio.title} · Balta Media`;
+        return;
+    }
+
+    // Luego serie
+    const serie = getSerieByUrl(path);
+    if (serie) {
+        renderSerie(container, path);
+        document.title = `${serie.titulo_serie} · Balta Media`;
+        return;
+    }
+
+    // Novedades
+    else if (path === '/novedades') {
+        const sorted = [...DATA].sort((a, b) => new Date(b.date) - new Date(a.date));
+        const recientes = sorted.slice(0, 20);
+        const aleatorios = [...DATA].sort(() => 0.5 - Math.random()).slice(0, 10);
+        const combined = [...new Set([...recientes, ...aleatorios])];
+        renderGrid(container, combined, 'Novedades y Recomendaciones');
+        document.title = 'Novedades · Balta Media';
+    }
+    // 404
+    else {
+        const module404 = await import('./404.js');
+        module404.render(container);
+        document.title = 'Página no encontrada · Balta Media';
+        if (module404.header === false) {
+            header.classList.add('hidden');
+            categoryFilters.classList.add('hidden');
+        }
+    }
+}
         }
 
         updateActiveCategory();
