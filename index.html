@@ -177,39 +177,42 @@
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            position: relative;
         }
 
-        #main-header {
+        /* HEADER Y FILTROS - COMPORTAMIENTO CORREGIDO */
+        .header-container {
             position: sticky;
             top: 0;
             z-index: 60;
-            background: rgba(5,5,5,0.88);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255,255,255,0.07);
+            width: 100%;
             transition: transform 0.32s cubic-bezier(0.25, 0.1, 0.25, 1);
+            background: rgba(5,5,5,0.96);
+            backdrop-filter: blur(12px);
         }
-        #main-header.hidden {
+
+        .header-container.hidden {
             transform: translateY(-100%);
         }
+
+        #main-header {
+            background: transparent;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+
         #main-header > div {
             padding: 0.75rem 1rem;
         }
 
         #category-filters {
-            position: sticky;
-            z-index: 55;
             background: rgba(5,5,5,0.96);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(255,255,255,0.07);
             flex-shrink: 0;
-            transition: top 0.32s ease;
-        }
-        #category-filters > div {
-            padding: 0.5rem 1rem;
         }
 
-        #main-header.hidden ~ #category-filters {
-            top: 0;
+        #category-filters > div {
+            padding: 0.5rem 1rem;
         }
 
         #content {
@@ -235,29 +238,32 @@
 <!-- Área principal -->
 <div class="main-area">
 
-    <!-- Header -->
-    <header id="main-header">
-        <div class="flex items-center justify-between">
-            <a href="/" class="flex items-center gap-2" data-link>
-                <img src="https://media.baltaanay.org/web/image/885-f3d79ca9/xhbalta-aula.png" alt="Balta Media" class="w-6 h-6 sm:w-8 sm:h-8 rounded-lg object-cover" loading="lazy">
-                <span class="text-lg sm:text-xl font-bold text-white">Balta Media</span>
-            </a>
-            <div class="flex items-center gap-3 sm:gap-4">
-                <a href="/novedades" class="relative text-gray-400 hover:text-white" data-link>
-                    <img src="https://media.baltaanay.org/web/image/796-aee658de/Explore.png" alt="Novedades" class="w-5 h-5" loading="lazy">
-                    <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+    <!-- Header + Filtros - Contenedor unificado para sticky -->
+    <div class="header-container" id="headerContainer">
+        <!-- Header -->
+        <header id="main-header">
+            <div class="flex items-center justify-between">
+                <a href="/" class="flex items-center gap-2" data-link>
+                    <img src="https://media.baltaanay.org/web/image/885-f3d79ca9/xhbalta-aula.png" alt="Balta Media" class="w-6 h-6 sm:w-8 sm:h-8 rounded-lg object-cover" loading="lazy">
+                    <span class="text-lg sm:text-xl font-bold text-white">Balta Media</span>
                 </a>
-                <a href="/my/home" class="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full overflow-hidden" data-link>
-                    <img src="https://media.baltaanay.org/web/image/793-902e5b33/Search%20%282%29.png" alt="Usuario" class="w-full h-full object-cover" loading="lazy">
-                </a>
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <a href="/novedades" class="relative text-gray-400 hover:text-white" data-link>
+                        <img src="https://media.baltaanay.org/web/image/796-aee658de/Explore.png" alt="Novedades" class="w-5 h-5" loading="lazy">
+                        <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                    </a>
+                    <a href="/my/home" class="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full overflow-hidden" data-link>
+                        <img src="https://media.baltaanay.org/web/image/793-902e5b33/Search%20%282%29.png" alt="Usuario" class="w-full h-full object-cover" loading="lazy">
+                    </a>
+                </div>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <!-- Filtros / categorías -->
-    <div id="category-filters">
-        <div class="overflow-x-auto no-scrollbar">
-            <div class="flex items-center gap-2 sm:gap-3" id="category-pills"></div>
+        <!-- Filtros / categorías -->
+        <div id="category-filters">
+            <div class="overflow-x-auto no-scrollbar">
+                <div class="flex items-center gap-2 sm:gap-3" id="category-pills"></div>
+            </div>
         </div>
     </div>
 
@@ -507,9 +513,9 @@ import { episodios, getSerieById } from '/episodios.js';
     // === CONTROL PRECISO DEL HEADER (solo scroll del #content) ===
     let lastScrollTop = 0;
     let isHeaderVisible = true;
-    const SCROLL_THRESHOLD = 180;        // distancia mínima para considerar ocultar
-    const DOWN_DELTA_MIN = 40;           // movimiento claro hacia abajo necesario para ocultar
-    const UP_DELTA_MIN = -20;            // movimiento hacia arriba para mostrar
+    const SCROLL_THRESHOLD = 80;        // Distancia mínima para considerar ocultar
+    const SCROLL_DOWN_THRESHOLD = 15;    // Movimiento hacia abajo mínimo para ocultar
+    const SCROLL_UP_THRESHOLD = 5;       // Movimiento hacia arriba mínimo para mostrar
 
     function updateActiveCategory() {
         const path = window.location.pathname;
@@ -524,13 +530,16 @@ import { episodios, getSerieById } from '/episodios.js';
         const path = window.location.pathname;
         const searchParams = new URLSearchParams(window.location.search);
         const container = document.getElementById('content');
+        const headerContainer = document.getElementById('headerContainer');
 
         try {
             // Reset total al cambiar página
             container.scrollTop = 0;
             lastScrollTop = 0;
             isHeaderVisible = true;
-            document.getElementById('main-header')?.classList.remove('hidden');
+            if (headerContainer) {
+                headerContainer.classList.remove('hidden');
+            }
 
             if (path === '/') {
                 renderFeed(container);
@@ -656,38 +665,38 @@ import { episodios, getSerieById } from '/episodios.js';
     if (contentElement) {
         contentElement.addEventListener('scroll', () => {
             const currentScroll = contentElement.scrollTop;
-            const header = document.getElementById('main-header');
-            if (!header) return;
+            const headerContainer = document.getElementById('headerContainer');
+            if (!headerContainer) return;
 
             // Siempre visible en el tope
             if (currentScroll <= 10) {
                 if (!isHeaderVisible) {
-                    header.classList.remove('hidden');
+                    headerContainer.classList.remove('hidden');
                     isHeaderVisible = true;
                 }
-                lastScrollTop = 0;
+                lastScrollTop = currentScroll;
                 return;
             }
 
             const delta = currentScroll - lastScrollTop;
 
-            // Solo actuar si hay movimiento claro
-            if (Math.abs(delta) < 15) {
+            // Solo actuar si hay movimiento significativo
+            if (Math.abs(delta) < 8) {
                 lastScrollTop = currentScroll;
                 return;
             }
 
-            if (delta > DOWN_DELTA_MIN && currentScroll > SCROLL_THRESHOLD) {
-                // Movimiento claro hacia abajo → ocultar
+            // Scroll hacia abajo
+            if (delta > SCROLL_DOWN_THRESHOLD && currentScroll > SCROLL_THRESHOLD) {
                 if (isHeaderVisible) {
-                    header.classList.add('hidden');
+                    headerContainer.classList.add('hidden');
                     isHeaderVisible = false;
                 }
             } 
-            else if (delta < UP_DELTA_MIN) {
-                // Movimiento claro hacia arriba → mostrar
+            // Scroll hacia arriba
+            else if (delta < -SCROLL_UP_THRESHOLD) {
                 if (!isHeaderVisible) {
-                    header.classList.remove('hidden');
+                    headerContainer.classList.remove('hidden');
                     isHeaderVisible = true;
                 }
             }
@@ -707,7 +716,7 @@ import { episodios, getSerieById } from '/episodios.js';
 
     window.router = router;
     router();
-    console.log('✅ Balta Media SPA – Header solo se oculta con movimiento claro hacia abajo');
+    console.log('✅ Balta Media SPA – Header y filtros se ocultan/muestran juntos');
 </script>
 
 </body>
