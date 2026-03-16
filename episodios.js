@@ -1,16 +1,4 @@
-// episodios.js - Datos de episodios y series con URLs únicas y categorización inteligente
-
-// ---------- FUNCIÓN AUXILIAR PARA CREAR SLUGS ----------
-function slugify(text) {
-    if (!text) return '';
-    return text
-        .toString()
-        .toLowerCase()
-        .trim()
-        .replace(/[^\w\s-]/g, '') // eliminar caracteres especiales
-        .replace(/[\s_-]+/g, '-')  // reemplazar espacios y guiones bajos por un guión
-        .replace(/^-+|-+$/g, '');  // eliminar guiones al inicio o final
-}
+// episodios.js - Datos de episodios y series (separados)
 
 // ---------- LISTA DE SERIES ----------
 export const series = [
@@ -62,11 +50,7 @@ export const series = [
 const seriesMap = Object.fromEntries(series.map(s => [s.seriesid, s]));
 
 // ---------- LISTA DE EPISODIOS (con seriesid) ----------
-// Para cada episodio, generamos detailUrl automáticamente si no tiene una personalizada.
-// Se considera personalizada si ya tiene un valor y es diferente a la url de la serie.
-// Para los que no, creamos: url_serie + '/' + slugify(titulo)
-
-const episodiosBase = [
+export const episodios = [
     {
         id: "la-excepcion",
         date: '2025-11-28',
@@ -78,7 +62,7 @@ const episodiosBase = [
         allowDownload: false,
         author: "Barahona",
         seriesid: "teoria-del-proceso",
-        // Sin detailUrl personalizado
+        detailUrl: '/teoria-del-proceso'  // puede coincidir con la serie o ser individual
     },
     {
         id: "principios-procesales",
@@ -91,7 +75,7 @@ const episodiosBase = [
         allowDownload: false,
         author: "Barahona",
         seriesid: "teoria-del-proceso",
-        // Sin detailUrl personalizado
+        detailUrl: '/teoria-del-proceso'
     },
     {
         id: "responsabilidad-penal-adolecencia",
@@ -104,7 +88,7 @@ const episodiosBase = [
         allowDownload: false,
         author: "Rony Eulalio",
         seriesid: "ddhh",
-        detailUrl: '/ddhh/adolecencia'  // personalizado
+        detailUrl: '/ddhh/adolecencia'
     },
     {
         id: "repaso-dd-procesal-constitucional",
@@ -117,7 +101,7 @@ const episodiosBase = [
         allowDownload: false,
         author: "César Solares",
         seriesid: "procesal-constitucional",
-        // Sin detailUrl personalizado
+        detailUrl: '/procesal-constitucional'
     },
     {
         id: "corrientes-teoria-delito",
@@ -130,7 +114,7 @@ const episodiosBase = [
         description: "Continuación de las corrientes de la teoría del delito. Teoría causalista, finalista y funcionalista.",
         allowDownload: false,
         seriesid: "ddpp-3-clases",
-        // Sin detailUrl personalizado
+        detailUrl: "/ddpp-3/clases"
     },
     {
         id: "teoria-causalista",
@@ -143,7 +127,7 @@ const episodiosBase = [
         description: "Desarrollo de la teoría causalista. Derecho Penal 3. Historia, Ciencia.",
         allowDownload: false,
         seriesid: "ddpp-3-clases",
-        // Sin detailUrl personalizado
+        detailUrl: "/ddpp-3/clases"
     },
     {
         id: "que-es-derecho-penal",
@@ -156,7 +140,7 @@ const episodiosBase = [
         description: "Conjunto de normas jurídicas de naturaleza pública que regulan los delitos, las penas y las medidas de seguridad. Ciencia pública. Derecho, Historia.",
         allowDownload: false,
         seriesid: "ddpp-3-clases",
-        // Sin detailUrl personalizado
+        detailUrl: "/ddpp-3/clases"
     },
     {
         id: "tipicidad-elementos-delito",
@@ -169,7 +153,7 @@ const episodiosBase = [
         description: "Análisis profundo del concepto de tipicidad en derecho y sociedad. Una mirada crítica y actual. Ciencia.",
         allowDownload: false,
         seriesid: "ddpp-3-clases",
-        // Sin detailUrl personalizado
+        detailUrl: "/ddpp-3/clases"
     },
     {
         id: "crisis-estado-derecho",
@@ -182,7 +166,7 @@ const episodiosBase = [
         description: "La crisis del Estado de Derecho. Por Lic. Raymundo Catz. El estado de derecho en crisis por los derechos de segunda y tercera generación.",
         allowDownload: false,
         seriesid: "dp-indigenas",
-        // Sin detailUrl personalizado
+        detailUrl: "/dp-indigenas"
     },
     {
         id: "conceptos-basicos-ddhh",
@@ -195,7 +179,7 @@ const episodiosBase = [
         description: "Conceptos básicos de los Derechos Humanos",
         allowDownload: false,
         seriesid: "dp-indigenas",
-        // Sin detailUrl personalizado
+        detailUrl: "/dp-indigenas"
     },
     {
         id: "antecedentes-derecho-trabajo",
@@ -208,7 +192,7 @@ const episodiosBase = [
         allowDownload: false,
         author: "Avidan Ortiz",
         seriesid: "derecho-laboral-1",
-        // Sin detailUrl personalizado
+        detailUrl: '/derecho-laboral-1'
     },
     {
         id: "fuentes-derecho-trabajo",
@@ -221,7 +205,7 @@ const episodiosBase = [
         allowDownload: false,
         author: "Avidan Ortiz",
         seriesid: "derecho-laboral-1",
-        // Sin detailUrl personalizado
+        detailUrl: '/derecho-laboral-1'
     },
     {
         id: "veliz-franco-vs-guatemala",
@@ -234,29 +218,9 @@ const episodiosBase = [
         allowDownload: true,
         author: "Melany y Laura",
         seriesid: "ddhh",
-        detailUrl: '/dh/caso-veliz-franco-vs-guatemala' // personalizado
+        detailUrl: '/dh/caso-veliz-franco-vs-guatemala'
     }
 ];
-
-// ---------- FUNCIÓN PARA ASIGNAR detailUrl AUTOMÁTICAMENTE ----------
-function asignarDetailUrls(episodiosList, seriesMap) {
-    return episodiosList.map(ep => {
-        // Si ya tiene detailUrl personalizado (definido y no es igual a la url de la serie), lo dejamos
-        if (ep.detailUrl && ep.detailUrl !== seriesMap[ep.seriesid]?.url_serie) {
-            return ep;
-        }
-        // Si no, generamos uno basado en la url de la serie y el título
-        const serieUrl = seriesMap[ep.seriesid]?.url_serie;
-        if (!serieUrl) return ep; // por si acaso
-        const slug = slugify(ep.title);
-        // Evitar duplicar la url de la serie si el slug está vacío
-        const newDetailUrl = slug ? `${serieUrl}/${slug}` : serieUrl;
-        return { ...ep, detailUrl: newDetailUrl };
-    });
-}
-
-// Aplicamos la asignación
-export const episodios = asignarDetailUrls(episodiosBase, seriesMap);
 
 // ---------- FUNCIONES DE ACCESO ----------
 export function getEpisodioById(id) {
@@ -284,6 +248,7 @@ export function getEpisodiosBySerieUrl(url) {
     return serie ? getEpisodiosBySerieId(serie.seriesid) : [];
 }
 
+// Para búsquedas
 export function getAllEpisodios() {
     return episodios;
 }
