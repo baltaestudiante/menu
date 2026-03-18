@@ -451,4 +451,522 @@ export function renderSerie(container, serieUrl) {
                         </div>
                         <p class="text-gray-400 text-sm mt-2 line-clamp-2 hidden sm:block">${ep.description}</p>
                         <div class="flex items-center gap-2 mt-4">
-                            <button class="episode-action-btn w-10 h
+                            <button class="episode-action-btn w-10 h-10 rounded-xl bg-black/30 backdrop-blur border border-white/10 flex items-center justify-center hover:bg-white/20 transition" onclick="window.handleAdd(event, '${ep.id}')" title="Añadir a lista">
+                                <img src="${addIcon}" class="w-5 h-5 icon-white" data-episodio-id="${ep.id}" data-added="${inPlaylist}">
+                            </button>
+                            <button class="episode-action-btn w-10 h-10 rounded-xl bg-black/30 backdrop-blur border border-white/10 flex items-center justify-center hover:bg-white/20 transition" onclick="window.handleDl(event, '${ep.id}')" title="${ep.allowDownload ? 'Descargar' : 'Descarga no disponible'}">
+                                <img src="${ep.allowDownload ? ICONS.dl : ICONS.noDl}" class="w-5 h-5 icon-white">
+                            </button>
+                            <button class="episode-action-btn w-10 h-10 rounded-xl bg-black/30 backdrop-blur border border-white/10 flex items-center justify-center hover:bg-white/20 transition" onclick="window.shareContent('${ep.title}', '${ep.detailUrl}')" title="Compartir">
+                                <img src="${ICONS.share}" class="w-5 h-5 icon-white">
+                            </button>
+                            <button class="episode-play-btn w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-[#7b2eda] flex items-center justify-center hover:scale-110 transition ml-auto" onclick="window.handlePlay(event, '${ep.id}')" title="Reproducir">
+                                <img src="${ICONS.play}" class="w-5 h-5 sm:w-7 sm:h-7 icon-white ml-1">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        const ultimoEpisodio = episodiosSerie[0] || null;
+        const html = `
+            <div class="detail-view w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="serie-header mb-8">
+                    <div class="block lg:hidden">
+                        <div class="relative w-full aspect-square max-w-[300px] mx-auto mb-6 rounded-3xl overflow-hidden shadow-2xl">
+                            <img src="${serie.portada_serie}" class="w-full h-full object-cover" alt="${serie.titulo_serie}">
+                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">${serie.titulo_serie}</h1>
+                        <p class="text-lg text-gray-300 mb-3">${episodiosSerie[0]?.author || ''}</p>
+                        <p class="text-gray-400 mb-6 leading-relaxed">${serie.descripcion_serie}</p>
+                        <div class="flex items-center gap-3 mb-8">
+                            ${ultimoEpisodio ? `
+                            <button class="flex-1 bg-[#7b2eda] hover:bg-[#8f3ef0] rounded-2xl py-4 px-6 flex items-center justify-center gap-3 transition transform hover:scale-[1.02]" onclick="window.handlePlay(event, '${ultimoEpisodio.id}')">
+                                <img src="${ICONS.play}" class="w-6 h-6 icon-white">
+                                <span class="font-bold">Último episodio</span>
+                            </button>
+                            ` : ''}
+                            <button class="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center hover:bg-white/20 transition" onclick="window.shareContent('${serie.titulo_serie}', '${serie.url_serie}')" title="Compartir serie">
+                                <img src="${ICONS.share}" class="w-6 h-6 icon-white">
+                            </button>
+                        </div>
+                    </div>
+                    <div class="hidden lg:block relative rounded-3xl overflow-hidden bg-gradient-to-br from-zinc-900/50 to-black/50 border border-white/10">
+                        <div class="absolute inset-0 opacity-20">
+                            <img src="${serie.portada_serie}" class="w-full h-full object-cover blur-3xl scale-110">
+                        </div>
+                        <div class="relative z-10 p-8 flex gap-8">
+                            <img src="${serie.portada_serie}" class="w-48 h-48 rounded-3xl object-cover shadow-2xl border-2 border-white/20" alt="${serie.titulo_serie}">
+                            <div class="flex-1">
+                                <h1 class="text-4xl font-extrabold text-white mb-2">${serie.titulo_serie}</h1>
+                                <p class="text-xl text-gray-300 mb-4">${episodiosSerie[0]?.author || ''}</p>
+                                <p class="text-gray-400 max-w-3xl leading-relaxed">${serie.descripcion_serie}</p>
+                                <div class="flex items-center gap-4 mt-8">
+                                    ${ultimoEpisodio ? `
+                                    <button class="bg-[#7b2eda] hover:bg-[#8f3ef0] rounded-2xl py-4 px-8 flex items-center gap-3 transition transform hover:scale-105" onclick="window.handlePlay(event, '${ultimoEpisodio.id}')">
+                                        <img src="${ICONS.play}" class="w-6 h-6 icon-white">
+                                        <span class="font-bold text-lg">Último episodio</span>
+                                    </button>
+                                    ` : ''}
+                                    <button class="w-14 h-14 rounded-2xl bg-black/40 backdrop-blur border border-white/20 flex items-center justify-center hover:bg-white/20 transition" onclick="window.shareContent('${serie.titulo_serie}', '${serie.url_serie}')" title="Compartir serie">
+                                        <img src="${ICONS.share}" class="w-6 h-6 icon-white">
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="episodes-list mt-8 lg:mt-12">
+                    <h2 class="text-xl lg:text-2xl font-bold mb-6 flex items-center gap-2">
+                        <span>Episodios</span>
+                        <span class="text-sm font-normal text-gray-500">(${episodiosSerie.length})</span>
+                    </h2>
+                    <div class="space-y-4">
+                        ${episodiosHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Error en renderSerie:', error);
+        container.innerHTML = `<div class="error-container p-8 text-center">
+            <p class="text-red-500 text-lg">Error al cargar la serie. Intenta de nuevo.</p>
+            <button onclick="window.location.href='/'" class="mt-4 bg-purple-600 px-4 py-2 rounded">Volver al inicio</button>
+        </div>`;
+    }
+}
+
+// ---------- RENDER FEED ----------
+export function renderFeed(container) {
+    let feedView = document.getElementById('feed-view');
+    let gridView = document.getElementById('grid-view');
+    if (!feedView) {
+        container.innerHTML = `
+            <div id="feed-view" class="space-y-8 sm:space-y-12 transition-opacity duration-300"></div>
+            <div id="grid-view" class="hidden transition-opacity duration-300">
+                <div class="flex items-center justify-between mb-6 sm:mb-8 mt-4 sm:mt-6">
+                    <h2 id="grid-title" class="text-xl sm:text-2xl font-bold">Resultados</h2>
+                    <button id="closeGridBtn" class="text-sm font-bold text-gray-400 hover:text-white flex items-center gap-1">
+                        <span class="text-xl">×</span> Cerrar búsqueda
+                    </button>
+                </div>
+                <div id="results-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6"></div>
+                <div id="empty-state" class="hidden py-8 sm:py-10 text-center">
+                    <p class="text-gray-400 text-base sm:text-lg mb-6 sm:mb-8" id="empty-msg">No encontramos nada...</p>
+                    <h3 class="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-white">Quizás te interese esto:</h3>
+                    <div id="recommendations-grid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-6"></div>
+                </div>
+            </div>
+        `;
+        feedView = document.getElementById('feed-view');
+        gridView = document.getElementById('grid-view');
+    }
+    
+    const getRandomSafe = (count, filterFn = () => true) => {
+        const filtered = DATA.filter(filterFn);
+        if (filtered.length === 0) return [];
+        const shuffled = [...filtered].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, Math.min(count, filtered.length));
+    };
+    
+    feedView.innerHTML = '';
+    
+    // Nuevo carrusel vertical al inicio (4:5)
+    feedView.innerHTML += createCarousel("Destacados del Día", "vertical",
+        getRandomSafe(15), "Todos", "category");
+    
+    feedView.innerHTML += createCarousel("Nuevos Lanzamientos", "standard",
+        getRandomSafe(15, ep => new Date(ep.date) > new Date(Date.now() - 30*24*60*60*1000)), "Todos", "category");
+    
+    feedView.innerHTML += createCarousel("Series de Video", "expand",
+        getRandomSafe(10, e => e.type === 'video'), "Cine y TV", "category");
+    
+    feedView.innerHTML += createCarousel("Top Semanal", "list",
+        getRandomSafe(16), "Todos", "category");
+    
+    feedView.innerHTML += createCarousel("Para Estudiar Profundamente", "double",
+        getRandomSafe(20, e => e.categories.includes("Matemáticas") || e.categories.includes("Física y Astronomía")), "Matemáticas", "category");
+    
+    feedView.innerHTML += createCarousel("Matemáticas", "standard",
+        getRandomSafe(15, e => e.categories.includes("Matemáticas")), "Matemáticas", "category");
+    
+    feedView.innerHTML += createCarousel("Especiales en Video", "expand",
+        getRandomSafe(10, e => e.type === 'video' && e.categories.includes("Documentales")), "Documentales", "category");
+    
+    feedView.innerHTML += createCarousel("Física y Astronomía", "standard",
+        getRandomSafe(15, e => e.categories.includes("Física y Astronomía")), "Física y Astronomía", "category");
+    
+    feedView.innerHTML += createCarousel("Ciencias Naturales y Tecnología", "double",
+        getRandomSafe(20, e => e.categories.some(c => ["Ciencias Naturales", "Tecnología e Informática"].includes(c))), "Otras Ciencias", "category");
+    
+    feedView.innerHTML += createSeriesCarousel();
+    
+    // Humanidades y Sociedad (ahora con estilo double como Mix de Saberes)
+    feedView.innerHTML += createCarousel("Humanidades y Sociedad", "double",
+        getRandomSafe(20, e => e.categories.some(c => 
+            ["Historia", "Filosofía", "Ciencias Sociales", "Arte y Cultura", "Economía y Finanzas"].includes(c) ||
+            /\b(geopolítica|geopolitica|política|politica|sociedad|humano|cultura|identidad)\b/i.test(e.title + ' ' + e.description)
+        )), "Ciencias Sociales", "category");
+    
+    feedView.innerHTML += createCarousel("Otras Ciencias y Disciplinas", "standard",
+        getRandomSafe(15, e => e.categories.includes("Otras Ciencias") ||
+            e.categories.some(c => ["Ciencias Naturales", "Tecnología e Informática"].includes(c))),
+        "Otras Ciencias", "category");
+    
+    feedView.innerHTML += createCarousel("Imprescindibles del Mes", "list",
+        getRandomSafe(16, e => new Date(e.date) > new Date(Date.now() - 60*24*60*60*1000)), "Todos", "category");
+    
+    feedView.innerHTML += createCarousel("Podcasts Destacados", "standard",
+        getRandomSafe(15, e => e.type === 'audio'), "Todos", "category");
+    
+    feedView.innerHTML += createCarousel("Charlas y Conferencias", "expand",
+        getRandomSafe(10, e => e.type === 'video' && (e.categories.includes("Cine y TV") || e.categories.includes("Documentales"))), "Cine y TV", "category");
+    
+    // Mentes Curiosas (ahora con contenido de investigación, criminalismo, guerras, conflictos)
+    feedView.innerHTML += createCarousel("Mentes Curiosas", "standard",
+        getRandomSafe(15, e => 
+            /\b(investigación|investigacion|criminalística|criminalistica|crimen|delito|forense|guerra|conflicto|violencia|seguridad|policía|policia|detective|asesinato|homicidio|justicia|penal|legal|sociedad|problema social)\b/i
+            .test(e.title + ' ' + e.description + ' ' + (e.series?.titulo_serie || ''))
+        ), "Derecho", "category");
+    
+    feedView.innerHTML += createCarousel("Mix de Saberes", "double",
+        getRandomSafe(20), "Todos", "category");
+}
+
+// ---------- RENDER GRID (para resultados de búsqueda, categorías, etc.) ----------
+export function renderGrid(container, items, title) {
+    let gridView = document.getElementById('grid-view');
+    if (!gridView) {
+        container.innerHTML = `
+            <div id="feed-view" class="hidden"></div>
+            <div id="grid-view" class="transition-opacity duration-300">
+                <div class="flex items-center justify-between mb-6 sm:mb-8 mt-4 sm:mt-6">
+                    <h2 id="grid-title" class="text-xl sm:text-2xl font-bold">${title}</h2>
+                    <button id="closeGridBtn" class="text-sm font-bold text-gray-400 hover:text-white flex items-center gap-1">
+                        <span class="text-xl">×</span> Cerrar búsqueda
+                    </button>
+                </div>
+                <div id="results-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6"></div>
+                <div id="empty-state" class="hidden py-8 sm:py-10 text-center">
+                    <p class="text-gray-400 text-base sm:text-lg mb-6 sm:mb-8" id="empty-msg">No encontramos nada...</p>
+                    <h3 class="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-white">Quizás te interese esto:</h3>
+                    <div id="recommendations-grid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-6"></div>
+                </div>
+            </div>
+        `;
+        gridView = document.getElementById('grid-view');
+    }
+    const gridContainer = document.getElementById('results-grid');
+    const emptyState = document.getElementById('empty-state');
+    const titleEl = document.getElementById('grid-title');
+    titleEl.innerText = title;
+    gridContainer.innerHTML = '';
+    if (items.length === 0) {
+        emptyState.classList.remove('hidden');
+        gridContainer.classList.add('hidden');
+        const searchTerm = title.replace('Resultados para ', '').replace(/"/g, '');
+        document.getElementById('empty-msg').innerText = `No hemos encontrado nada para "${searchTerm}"`;
+        const suggestions = [...DATA].sort(() => 0.5 - Math.random()).slice(0, 5);
+        const recGrid = document.getElementById('recommendations-grid');
+        recGrid.innerHTML = '';
+        suggestions.forEach(ep => {
+            recGrid.innerHTML += createGridCard(ep);
+        });
+    } else {
+        emptyState.classList.add('hidden');
+        gridContainer.classList.remove('hidden');
+        items.forEach(item => {
+            gridContainer.innerHTML += createGridCard(item);
+        });
+    }
+    document.getElementById('feed-view')?.classList.add('hidden');
+    gridView.classList.remove('hidden');
+    document.getElementById('closeGridBtn')?.addEventListener('click', () => {
+        window.history.pushState(null, null, '/');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+}
+
+// ---------- RENDER GRID DE SERIES ----------
+export function renderSeriesGrid(container, title) {
+    const seriesSet = new Map();
+    DATA.forEach(ep => {
+        if (ep.series && !seriesSet.has(ep.series.url_serie)) {
+            seriesSet.set(ep.series.url_serie, ep.series);
+        }
+    });
+    
+    const series = Array.from(seriesSet.values());
+    
+    let gridView = document.getElementById('grid-view');
+    if (!gridView) {
+        container.innerHTML = `
+            <div id="feed-view" class="hidden"></div>
+            <div id="grid-view" class="transition-opacity duration-300">
+                <div class="flex items-center justify-between mb-6 sm:mb-8 mt-4 sm:mt-6">
+                    <h2 id="grid-title" class="text-xl sm:text-2xl font-bold">${title}</h2>
+                    <button id="closeGridBtn" class="text-sm font-bold text-gray-400 hover:text-white flex items-center gap-1">
+                        <span class="text-xl">×</span> Cerrar búsqueda
+                    </button>
+                </div>
+                <div id="results-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6"></div>
+                <div id="empty-state" class="hidden py-8 sm:py-10 text-center">
+                    <p class="text-gray-400 text-base sm:text-lg mb-6 sm:mb-8" id="empty-msg">No encontramos series...</p>
+                </div>
+            </div>
+        `;
+        gridView = document.getElementById('grid-view');
+    }
+    
+    const gridContainer = document.getElementById('results-grid');
+    const emptyState = document.getElementById('empty-state');
+    const titleEl = document.getElementById('grid-title');
+    titleEl.innerText = title;
+    gridContainer.innerHTML = '';
+    
+    if (series.length === 0) {
+        emptyState.classList.remove('hidden');
+        gridContainer.classList.add('hidden');
+    } else {
+        emptyState.classList.add('hidden');
+        gridContainer.classList.remove('hidden');
+        series.forEach(serie => {
+            gridContainer.innerHTML += `
+                <div class="grid-card group cursor-pointer" onclick="window.goToDetail('${serie.url_serie}')">
+                    <div class="aspect-square bg-zinc-800/50 relative rounded-xl overflow-hidden">
+                        <img src="${serie.portada_serie}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                    </div>
+                    <h4 class="font-bold text-sm text-white truncate mt-2 group-hover:text-blue-400 transition-colors">${serie.titulo_serie}</h4>
+                    <p class="text-xs text-gray-500 truncate">Serie</p>
+                </div>
+            `;
+        });
+    }
+    
+    document.getElementById('feed-view')?.classList.add('hidden');
+    gridView.classList.remove('hidden');
+    document.getElementById('closeGridBtn')?.addEventListener('click', () => {
+        window.history.pushState(null, null, '/');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+}
+
+// ---------- FUNCIONES GLOBALES ----------
+window.shareContent = async (title, url) => {
+    const fullUrl = window.location.origin + url;
+    if (navigator.share) {
+        try {
+            await navigator.share({ title, url: fullUrl });
+        } catch (e) {
+            console.log('Compartir cancelado');
+        }
+    } else {
+        navigator.clipboard.writeText(fullUrl);
+        // Sin alert
+    }
+};
+
+// Variable para controlar el timeout de reproducción
+let playTimeout = null;
+
+window.handlePlay = function(e, episodioId) {
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    
+    const ep = DATA.find(x => x.id === episodioId);
+    if (!ep) return false;
+
+    if (typeof window.playEpisodeExpanded !== 'function') {
+        showCustomAlert(ep.title, 'no está disponible por ahora.');
+        return false;
+    }
+
+    // Limpiar timeout anterior si existe
+    if (playTimeout) {
+        clearTimeout(playTimeout);
+    }
+
+    // Intentar reproducir
+    try {
+        const playSuccess = window.playEpisodeExpanded(
+            ep.mediaUrl,
+            ep.type,
+            ep.coverUrl,
+            ep.coverUrl,
+            ep.title,
+            ep.detailUrl,
+            ep.author,
+            [],
+            ep.description,
+            ep.allowDownload
+        );
+
+        // Si la función devuelve false inmediatamente, mostrar alerta
+        if (playSuccess === false) {
+            showCustomAlert(ep.title, 'no está disponible por ahora.');
+            return false;
+        }
+
+        // Configurar timeout para verificar si realmente se reprodujo
+        playTimeout = setTimeout(() => {
+            // Verificar si el reproductor está reproduciendo
+            const player = document.querySelector('audio, video');
+            if (!player || player.paused) {
+                showCustomAlert(ep.title, 'no pudo reproducirse. Verifica tu conexión.');
+            }
+            playTimeout = null;
+        }, 5000); // 5 segundos de espera
+
+    } catch (err) {
+        console.error('Error al reproducir:', err);
+        showCustomAlert(ep.title, 'no está disponible por ahora.');
+    }
+
+    return false;
+};
+
+window.handleDl = function(e, episodioId) {
+    e.stopPropagation();
+    e.preventDefault();
+    const ep = DATA.find(x => x.id === episodioId);
+    if (!ep) return false;
+
+    if (!ep.allowDownload) {
+        showCustomAlert(ep.title, 'no está disponible para descarga por ahora.');
+        return false;
+    }
+
+    const ext = ep.type === 'video' ? 'mp4' : 'mp3';
+    const filename = `${ep.title.replace(/[^a-z0-9]/gi, '_').substring(0, 50)}.${ext}`;
+    try {
+        const a = document.createElement('a');
+        a.href = ep.mediaUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    } catch (error) {
+        showCustomAlert(ep.title, 'no se pudo descargar automáticamente.');
+    }
+    return false;
+};
+
+window.handleAdd = function(e, episodioId) {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const ep = DATA.find(x => x.id === episodioId);
+    if (!ep) return false;
+
+    const alreadyIn = userStorage.playlist.has(ep.id);
+    
+    if (alreadyIn) {
+        userStorage.playlist.remove(ep.id);
+    } else {
+        userStorage.playlist.add(ep);
+    }
+
+    // Actualizar TODOS los iconos de añadir para este episodio
+    document.querySelectorAll(`[data-episodio-id="${episodioId}"] img[data-added], [data-episodio-id="${episodioId}"] .action-icon[data-added]`)
+        .forEach(img => {
+            if (img.tagName === 'IMG') {
+                img.src = alreadyIn ? ICONS.add : ICONS.added;
+                img.dataset.added = alreadyIn ? 'false' : 'true';
+                img.style.transform = 'scale(1.3)';
+                setTimeout(() => img.style.transform = 'scale(1)', 180);
+            }
+        });
+
+    return false;
+};
+
+window.goToDetail = function(url) {
+    if (url && url !== '#') {
+        window.history.pushState(null, null, url);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+};
+
+window.handleCategoryClick = function(category) {
+    const url = category === 'Todos' ? '/' : `/categoria/${encodeURIComponent(category)}`;
+    window.history.pushState(null, null, url);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.showItemsGrid = function(title, itemIds) {
+    const items = itemIds.map(id => DATA.find(ep => ep.id === id)).filter(ep => ep);
+    const container = document.getElementById('app');
+    if (container) {
+        renderGrid(container, items, title);
+    }
+};
+
+window.showSeriesGrid = function(title) {
+    const container = document.getElementById('app');
+    if (container) {
+        renderSeriesGrid(container, title);
+    }
+};
+
+export function renderCategoryPills(activeCat = 'Todos') {
+    const container = document.getElementById('category-pills');
+    if (!container) return;
+   
+    container.innerHTML = '';
+   
+    CATEGORIES.forEach(cat => {
+        const isActive = cat === activeCat;
+        const btn = document.createElement('button');
+        btn.className = `whitespace-nowrap px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-bold transition-all ${isActive ? 'bg-white text-black' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`;
+        btn.innerText = cat;
+       
+        btn.addEventListener('click', () => {
+            window.handleCategoryClick(cat);
+        });
+       
+        container.appendChild(btn);
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => renderCategoryPills());
+} else {
+    renderCategoryPills();
+}
+
+// ---------- ALERTA PERSONALIZADA ----------
+function showCustomAlert(title, message) {
+    const fullMessage = `"${title}" ${message}`;
+    
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm';
+    modal.innerHTML = `
+        <div class="bg-zinc-900 rounded-2xl p-6 max-w-md w-[90%] border border-zinc-700 shadow-2xl">
+            <h3 class="text-xl font-bold text-white mb-4">${fullMessage}</h3>
+            <div class="flex flex-col sm:flex-row gap-3 justify-end">
+                <a href="https://www.baltaanay.org/error" target="_blank" 
+                   class="px-5 py-2.5 bg-red-600 hover:bg-red-700 rounded-lg text-white font-medium text-center transition">
+                    Reportar
+                </a>
+                <a href="https://www.baltaanay.org/contactus" target="_blank" 
+                   class="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-medium text-center transition">
+                    Solicitar
+                </a>
+                <button onclick="this.closest('.fixed').remove()" 
+                        class="px-5 py-2.5 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-white font-medium transition">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    modal.addEventListener('click', e => {
+        if (e.target === modal) modal.remove();
+    });
+}
+
+console.log('✅ show.js cargado completamente - versión MEJORADA');
