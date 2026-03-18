@@ -55,6 +55,13 @@ export const series = [
         titulo_serie: 'Derecho Laboral 1',
         descripcion_serie: 'Un derecho humano por excelencia. Es la ciencia, una disciplina pública. Ciencias Sociales.',
         url_serie: '/derecho-laboral-1'
+    },
+    {
+        seriesid: "derecho-civil-3",
+        portada_serie: 'https://balta-media.odoo.com/web/image/1036-2f9d7316/civil%20iii.webp',
+        titulo_serie: 'Derecho Civil 3',
+        descripcion_serie: 'Contratos. Sociedad. Mercado. Economía. Derecho Privado. Sociedad.',
+        url_serie: '/derecho-civil-3'
     }
 ];
 
@@ -235,7 +242,7 @@ const episodiosBase = [
     {
         id: "analisis-art-321-c-penal",
         date: '2026-03-17',
-        mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-1-13/418069738-44100-2-616f210f1eb48.m4a",
+        mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-2-17/420234670-44100-2-de45e5688c25e.m4a",
         type: "audio",
         coverUrl: 'https://balta-media.odoo.com/web/image/925-6ed84678/DERECHO%20PENAL%20III.png',
         title: "Análisis Artículo 321 Código Penal",
@@ -244,7 +251,137 @@ const episodiosBase = [
         allowDownload: false,
         seriesid: "ddpp-3-clases",
         // Sin detailUrl personalizado
-    }
+    },
+    {
+        id: "derecho-de-obligaciones",
+        date: '2026-01-28',
+        mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-2-6/419435680-44100-2-430de7e946de8.m4a",
+        type: "audio",
+        coverUrl: 'https://balta-media.odoo.com/web/image/1036-2f9d7316/civil%20iii.webp',
+        title: "Derecho de obligaciones (Clase 1)",
+        author: "Héctor Ortíz",
+        description: "Conferencia. Derecho de Obligaciones. Contrato.",
+        allowDownload: false,
+        seriesid: "derecho-civil-3",
+        detailUrl: '/derecho-civil-3/clase-1'
+    },
+    {
+        id: "fuentes-de-las-obligaciones",
+        date: '2026-01-29',
+        mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-2-6/419435797-44100-2-c0e15358ed6c5.m4a",
+        type: "audio",
+        coverUrl: 'https://balta-media.odoo.com/web/image/1036-2f9d7316/civil%20iii.webp',
+        title: "Fuentes de las obligaciones (Clase 2)",
+        author: "Héctor Ortíz",
+        description: "Conferencia. Fuentes de las obligaciones. Historia. Derecho Romano.",
+        allowDownload: false,
+        seriesid: "derecho-civil-3",
+        detailUrl: '/derecho-civil-3/clase-2'
+    },
+    {
+        id: "hechos-ilicitos",
+        date: '2026-02-03',
+        mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-2-6/419435898-44100-2-8f4e3581effeb.m4a",
+        type: "audio",
+        coverUrl: 'https://balta-media.odoo.com/web/image/1036-2f9d7316/civil%20iii.webp',
+        title: "Hechos Ilícitos -Cuasidelitos- (Clase 3)",
+        author: "Héctor Ortíz",
+        description: "Conferencia. Cuadidelitos. Pena de daños y perjuicios.",
+        allowDownload: false,
+        seriesid: "derecho-civil-3",
+        detailUrl: '/derecho-civil-3/clase-3'
+    },
+    {
+        id: "teoria-de-la-culpabilidad-civil",
+        date: '2026-02-05',
+        mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-2-6/419435997-44100-2-8214ff3e298b.m4a",
+        type: "audio",
+        coverUrl: 'https://balta-media.odoo.com/web/image/1036-2f9d7316/civil%20iii.webp',
+        title: "Teoría de la culpabilidad civil (Clase 4)",
+        author: "Héctor Ortíz",
+        description: "Conferencia. Derecho de Obligaciones. Contrato.",
+        allowDownload: false,
+        seriesid: "derecho-civil-3",
+        detailUrl: '/derecho-civil-3/clase-4'
+    },
+    {
+        id: "respondabilidad-civil",
+        date: '2026-02-11',
+        mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-2-6/419436066-44100-2-ee664322a702d.m4a",
+        type: "audio",
+        coverUrl: 'https://balta-media.odoo.com/web/image/1036-2f9d7316/civil%20iii.webp',
+        title: "Responsabilidad Civil -cuasidelitos-fianl (clase 5)",
+        author: "Héctor Ortíz",
+        description: "Conferencia. Derecho de Obligaciones. Contrato.",
+        allowDownload: false,
+        seriesid: "derecho-civil-3",
+        detailUrl: '/derecho-civil-3/clase-5'
+    },
+    {
+        id: "actos-ilicitos-sin-convenio",
+        date: '2026-02-12',
+        mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-2-6/419436157-44100-2-ed4e4d5f050cb.m4a",
+        type: "audio",
+        coverUrl: 'https://balta-media.odoo.com/web/image/1036-2f9d7316/civil%20iii.webp',
+        title: "Actos Ilícitos sin convenio (clase 6)",
+        author: "Héctor Ortíz",
+        description: "Conferencia. Derecho de Obligaciones. Contrato.",
+        allowDownload: false,
+        seriesid: "derecho-civil-3",
+        detailUrl: '/derecho-civil-3/clase-6'
+    },
+    {
+        id: "gestion-de-negocios",
+        date: '2026-02-17',
+        mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-2-6/419436248-44100-2-cad693ad7a9b.m4a",
+        type: "audio",
+        coverUrl: 'https://balta-media.odoo.com/web/image/1036-2f9d7316/civil%20iii.webp',
+        title: "Gestión de negocios (clase 7)",
+        author: "Héctor Ortíz",
+        description: "Conferencia. Derecho de Obligaciones. Contrato. Otras ciencias.",
+        allowDownload: false,
+        seriesid: "derecho-civil-3",
+        detailUrl: '/derecho-civil-3/clase-7'
+    },
+    {
+        id: "declaracion-unilateral-de-voluntad",
+        date: '2026-02-19',
+        mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-2-6/419436328-44100-2-1905ccdfa1797.m4a",
+        type: "audio",
+        coverUrl: 'https://balta-media.odoo.com/web/image/1036-2f9d7316/civil%20iii.webp',
+        title: "Declaración unilateral de voluntad (clase 8)",
+        author: "Héctor Ortíz",
+        description: "Conferencia. Derecho de Obligaciones. Contrato.",
+        allowDownload: false,
+        seriesid: "derecho-civil-3",
+        detailUrl: '/derecho-civil-3/clase-8'
+    },
+    {
+        id: "obligaciones-segun-el-sujeto-1",
+        date: '2026-03-03',
+        mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-2-17/420234086-44100-2-df4d595ab8d8d.m4a",
+        type: "audio",
+        coverUrl: 'https://balta-media.odoo.com/web/image/1036-2f9d7316/civil%20iii.webp',
+        title: "Obligaciones según el sujeto parte-1 (clase 9)",
+        author: "Héctor Ortíz",
+        description: "Conferencia. Derecho de Obligaciones. Contrato.",
+        allowDownload: false,
+        seriesid: "derecho-civil-3",
+        detailUrl: '/derecho-civil-3/clase-9'
+    },
+    {
+        id: "obligaciones-segun-el-sujeto-2",
+        date: '2026-03-03',
+        mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-2-6/419436066-44100-2-ee664322a702d.m4a",
+        type: "audio",
+        coverUrl: 'https://balta-media.odoo.com/web/image/1036-2f9d7316/civil%20iii.webp',
+        title: "Obligaciones según el sujeto parte-2 (clase 10)",
+        author: "Héctor Ortíz",
+        description: "Conferencia. Derecho de Obligaciones. Contrato.",
+        allowDownload: false,
+        seriesid: "derecho-civil-3",
+        detailUrl: '/derecho-civil-3/clase-10'
+    },
 ];
 
 // ---------- FUNCIÓN PARA ASIGNAR detailUrl AUTOMÁTICAMENTE ----------
