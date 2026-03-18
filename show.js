@@ -1,4 +1,4 @@
-// show.js - Vistas del feed, episodio, serie, etc. - VERSIÓN DEFINITIVA CORREGIDA
+// show.js - Vistas del feed, episodio, serie, etc. - VERSIÓN DEFINITIVA FUNCIONAL
 import { getAllEpisodios, getSerieById, getEpisodiosBySerieId, getEpisodiosConSerie } from './episodios.js';
 import { userStorage } from './storage.js';
 import './player.js';
@@ -792,7 +792,7 @@ window.handlePlay = function(e, episodioId) {
         return false;
     }
 
-    // Intentar reproducir
+    // Intentar reproducir - SIN ALERTAS EXTRA, solo si hay error real
     try {
         window.playEpisodeExpanded(
             ep.mediaUrl,
@@ -806,8 +806,7 @@ window.handlePlay = function(e, episodioId) {
             ep.description,
             ep.allowDownload
         );
-        // No mostramos alerta a menos que ocurra un error real en el reproductor
-        // El reproductor debería manejar sus propios errores
+        // El reproductor maneja sus propios errores
     } catch (err) {
         console.error('Error al reproducir:', err);
         showCustomAlert(ep.title, 'no está disponible por ahora.');
@@ -836,8 +835,17 @@ window.handleDl = function(e, episodioId) {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+        
+        // Si la descarga no inicia (p.ej., por CORS), abrir en nueva pestaña como fallback
+        setTimeout(() => {
+            if (!a.href.startsWith('blob:')) {
+                window.open(ep.mediaUrl, '_blank');
+            }
+        }, 1000);
     } catch (error) {
-        showCustomAlert(ep.title, 'no se pudo descargar automáticamente.');
+        console.error('Error en descarga:', error);
+        // Fallback: abrir en nueva pestaña
+        window.open(ep.mediaUrl, '_blank');
     }
     return false;
 };
@@ -863,6 +871,7 @@ window.handleAdd = function(e, episodioId) {
             if (img.tagName === 'IMG') {
                 img.src = alreadyIn ? ICONS.add : ICONS.added;
                 img.dataset.added = alreadyIn ? 'false' : 'true';
+                // Animación de escala
                 img.style.transform = 'scale(1.3)';
                 setTimeout(() => img.style.transform = 'scale(1)', 180);
             }
@@ -958,4 +967,4 @@ function showCustomAlert(title, message) {
     });
 }
 
-console.log('✅ show.js cargado completamente - versión DEFINITIVA CORREGIDA');
+console.log('✅ show.js cargado completamente - versión DEFINITIVA FUNCIONAL');
