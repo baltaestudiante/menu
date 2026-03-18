@@ -448,99 +448,105 @@ import { episodios, getSerieById } from '/episodios.js';
 </html>
 <!-- Finaliza el index -->
 
-
-<footer class="main-footer">
-    <div class="footer-container">
+<footer class="footer-safe-wrapper">
+    <div class="footer-safe-content">
         
-        <div class="footer-section">
-            <h3>Mi Sitio Web</h3>
-            <p>Creando experiencias digitales únicas. Innovación y diseño en un solo lugar.</p>
+        <div class="footer-safe-grid">
+            <div class="footer-safe-column">
+                <span class="footer-safe-title">Contacto</span>
+                <p>Email: info@tusitio.com</p>
+                <p>Tel: +123 456 789</p>
+            </div>
+
+            <div class="footer-safe-column">
+                <span class="footer-safe-title">Enlaces</span>
+                <a href="#" class="footer-safe-link">Privacidad</a>
+                <a href="#" class="footer-safe-link">Términos</a>
+                <a href="#" class="footer-safe-link">Soporte</a>
+            </div>
         </div>
 
-        <div class="footer-section">
-            <h4>Enlaces</h4>
-            <ul>
-                <li><a href="#">Inicio</a></li>
-                <li><a href="#">Servicios</a></li>
-                <li><a href="#">Portafolio</a></li>
-                <li><a href="#">Blog</a></li>
-            </ul>
+        <hr class="footer-safe-divider">
+
+        <div class="footer-safe-bottom">
+            <p>&copy; 2026 Tu Marca. Todos los derechos reservados.</p>
         </div>
-
-        <div class="footer-section">
-            <h4>Contacto</h4>
-            <p>Email: contacto@tusitio.com</p>
-            <p>Teléfono: +123 456 789</p>
-            <p>Ciudad, País</p>
-        </div>
-
-    </div>
-
-    <div class="footer-bottom">
-        <p>&copy; 2026 Mi Sitio Web. Todos los derechos reservados.</p>
     </div>
 </footer>
 
 <style>
-    /* Estilos encapsulados para evitar conflictos */
-    .main-footer {
-        background-color: #1a1a1a; /* Color oscuro profesional */
-        color: #ffffff;
-        padding: 40px 0 20px 0;
-        font-family: sans-serif;
-        line-height: 1.6;
+    /* El prefijo .footer-safe asegura que estas reglas NO toquen el resto de tu index */
+    .footer-safe-wrapper {
+        background-color: #222222 !important;
+        color: #ffffff !important;
+        padding: 40px 20px 20px 20px !important;
+        margin: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        font-family: Arial, sans-serif !important;
+        clear: both !important; /* Evita problemas con floats anteriores */
     }
 
-    .footer-container {
-        max-width: 1100px;
-        margin: 0 auto;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1-fr));
-        gap: 30px;
-        padding: 0 20px;
+    .footer-safe-content {
+        max-width: 1000px !important;
+        margin: 0 auto !important;
     }
 
-    .footer-section h3, .footer-section h4 {
-        color: #f4f4f4;
-        margin-bottom: 20px;
+    .footer-safe-grid {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: space-between !important;
+        gap: 20px !important;
     }
 
-    .footer-section ul {
-        list-style: none;
-        padding: 0;
+    .footer-safe-column {
+        flex: 1 !important;
+        min-width: 200px !important;
     }
 
-    .footer-section ul li {
-        margin-bottom: 10px;
+    .footer-safe-title {
+        display: block !important;
+        font-weight: bold !important;
+        margin-bottom: 15px !important;
+        text-transform: uppercase !important;
+        font-size: 14px !important;
     }
 
-    .footer-section ul li a {
-        color: #bbb;
-        text-decoration: none;
-        transition: color 0.3s ease;
+    .footer-safe-column p {
+        margin: 5px 0 !important;
+        font-size: 14px !important;
+        color: #ccc !important;
     }
 
-    .footer-section ul li a:hover {
-        color: #ffffff;
+    .footer-safe-link {
+        display: block !important;
+        color: #aaa !important;
+        text-decoration: none !important;
+        font-size: 14px !important;
+        margin-bottom: 8px !important;
     }
 
-    .footer-bottom {
-        text-align: center;
-        margin-top: 40px;
-        padding-top: 20px;
-        border-top: 1px solid #333;
-        font-size: 14px;
-        color: #777;
+    .footer-safe-link:hover {
+        color: #fff !important;
     }
 
-    /* Ajuste para móviles */
-    @media (max-width: 768px) {
-        .footer-container {
-            text-align: center;
-        }
+    .footer-safe-divider {
+        border: 0 !important;
+        border-top: 1px solid #444 !important;
+        margin: 30px 0 20px 0 !important;
+    }
+
+    .footer-safe-bottom {
+        text-align: center !important;
+        font-size: 12px !important;
+        color: #777 !important;
+    }
+
+    /* Reset preventivo: evita que estilos globales de <ul> o <li> afecten esto */
+    .footer-safe-wrapper * {
+        box-sizing: border-box !important;
     }
 </style>
-
 
 <!-- Inicia el reproductor-->
 
