@@ -163,7 +163,6 @@
         }
         .sidebar-rec-play-btn:hover { background: rgba(255,255,255,0.2); }
         .sidebar-rec-play-btn svg { width: 18px; height: 18px; fill: white; }
-
         /* MAIN AREA */
         .main-area {
             grid-area: main-area;
@@ -206,9 +205,8 @@
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             padding: 1.25rem 1rem;
-            padding-bottom: 140px;   /* ← Espacio extra para footer / derechos de autor */
+            padding-bottom: 140px;   /* Espacio para footer/derechos de autor */
         }
-
         @media (max-width: 768px) {
             body {
                 grid-template-columns: 1fr;
@@ -224,9 +222,8 @@
 
 <!-- Área principal -->
 <div class="main-area">
-    <!-- Header + Filtros - Contenedor unificado para sticky -->
+    <!-- Header + Filtros -->
     <div class="header-container" id="headerContainer">
-        <!-- Header -->
         <header id="main-header">
             <div class="flex items-center justify-between">
                 <a href="/" class="flex items-center gap-2" data-link>
@@ -244,7 +241,6 @@
                 </div>
             </div>
         </header>
-        <!-- Filtros / categorías -->
         <div id="category-filters">
             <div class="overflow-x-auto no-scrollbar">
                 <div class="flex items-center gap-2 sm:gap-3" id="category-pills"></div>
@@ -282,12 +278,10 @@ import { episodios, getSerieById } from '/episodios.js';
         currentState: localStorage.getItem('sidebar_state') || 'collapsed',
         isMobile: window.innerWidth <= SIDEBAR_CONFIG.BREAKPOINT
     };
-
     function getRandomEpisodes(count = 12) {
         const shuffled = [...episodios].sort(() => 0.5 - Math.random());
         return shuffled.slice(0, count);
     }
-
     function renderSidebar() {
         const sidebar = document.createElement('aside');
         sidebar.className = `sidebar-desktop ${sidebarInstance.currentState}`;
@@ -328,7 +322,6 @@ import { episodios, getSerieById } from '/episodios.js';
         sidebar.appendChild(recSection);
         return sidebar;
     }
-
     function populateRecommendations() {
         const container = document.getElementById('sidebarRecList');
         if (!container) return;
@@ -375,7 +368,6 @@ import { episodios, getSerieById } from '/episodios.js';
             container.appendChild(item);
         });
     }
-
     function setActiveNavItem() {
         const currentPath = window.location.pathname;
         document.querySelectorAll('.sidebar-nav-item').forEach(item => {
@@ -387,7 +379,6 @@ import { episodios, getSerieById } from '/episodios.js';
             );
         });
     }
-
     function initSidebarToggle() {
         const sidebar = document.getElementById('sidebarDesktop');
         const toggle = document.getElementById('sidebarDesktopToggle');
@@ -408,7 +399,6 @@ import { episodios, getSerieById } from '/episodios.js';
             localStorage.setItem('sidebar_state', isCollapsed ? 'expanded' : 'collapsed');
         });
     }
-
     function initSidebar() {
         sidebarInstance.isMobile = window.innerWidth <= SIDEBAR_CONFIG.BREAKPOINT;
         const oldSidebar = document.querySelector('.sidebar-desktop');
@@ -421,13 +411,11 @@ import { episodios, getSerieById } from '/episodios.js';
         setActiveNavItem();
         sidebarInstance.initialized = true;
     }
-
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initSidebar);
     } else {
         initSidebar();
     }
-
     window.addEventListener('resize', () => {
         const wasMobile = sidebarInstance.isMobile;
         const isMobileNow = window.innerWidth <= SIDEBAR_CONFIG.BREAKPOINT;
@@ -436,10 +424,8 @@ import { episodios, getSerieById } from '/episodios.js';
             initSidebar();
         }
     });
-
     document.addEventListener('spa-navigation', setActiveNavItem);
     window.addEventListener('popstate', setActiveNavItem);
-
     window.sidebarAPI = {
         refresh: populateRecommendations,
         setActive: setActiveNavItem,
@@ -461,34 +447,26 @@ import { episodios, getSerieById } from '/episodios.js';
 })();
 </script>
 
-<!-- === HEADER HIDE ON SCROLL + FOOTER SPACE (nuevo) === -->
+<!-- HEADER HIDE ON SCROLL (versión definitiva - solo escucha #content) -->
 <script>
-    // Header desaparece al bajar y reaparece al subir
     let lastScrollTop = 0;
     const headerContainer = document.getElementById('headerContainer');
-    const SCROLL_THRESHOLD = 60;
 
     function handleHeaderScroll() {
-        const st = window.scrollY || document.documentElement.scrollTop;
+        const st = document.getElementById('content').scrollTop;
 
-        if (Math.abs(st - lastScrollTop) < 10) return;
+        if (Math.abs(st - lastScrollTop) < 15) return;
 
-        if (st > lastScrollTop && st > SCROLL_THRESHOLD) {
+        if (st > lastScrollTop && st > 80) {
             headerContainer.classList.add('hidden');
         } else {
             headerContainer.classList.remove('hidden');
         }
 
-        lastScrollTop = st <= 0 ? 0 : st;
+        lastScrollTop = st;
     }
 
-    const content = document.getElementById('content');
-    content.addEventListener('scroll', handleHeaderScroll, { passive: true });
-    window.addEventListener('scroll', handleHeaderScroll, { passive: true });
-
-    // Opcional: si quieres agregar un footer fijo al final del contenido
-    // Puedes llamarlo desde tu main.js después de renderizar el contenido:
-    // document.getElementById('content').insertAdjacentHTML('beforeend', footerHTML);
+    document.getElementById('content').addEventListener('scroll', handleHeaderScroll, { passive: true });
 </script>
 
 <!-- Cargar el router principal -->
