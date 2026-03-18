@@ -35,9 +35,9 @@ const GLOBAL_STYLES = `
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(2px);
         }
-        /* Ajuste para carrusel double (Mix de Saberes y Humanidades) */
+        /* Ajuste para carrusel double (Mix de Saberes) */
         .carousel-double .flex-col {
-            gap: 0.75rem; /* reducir espacio entre filas */
+            gap: 0.75rem;
         }
         .carousel-double .card-std {
             margin-bottom: 0;
@@ -614,12 +614,7 @@ export function renderFeed(container) {
     
     feedView.innerHTML += createSeriesCarousel();
     
-    // Carrusel de Humanidades y Sociedad (ahora con estilo double y contenido enriquecido)
-    feedView.innerHTML += createCarousel("Sociedad, Política y Economía", "double",
-        getRandomSafe(20, e => e.categories.some(c => 
-            ["Historia", "Filosofía", "Ciencias Sociales", "Arte y Cultura", "Economía y Finanzas"].includes(c) ||
-            /\b(geopolítica|geopolitica|política|politica|sociedad|humano|cultura|identidad|conflicto|guerra|paz|democracia|gobierno)\b/i.test(e.title + ' ' + e.description)
-        )), "Ciencias Sociales", 'category');
+    // ELIMINADO: Carrusel "Sociedad, Política y Economía" (anteriormente Humanidades)
     
     feedView.innerHTML += createCarousel("Otras Ciencias y Disciplinas", "standard",
         getRandomSafe(15, e => e.categories.includes("Otras Ciencias") ||
@@ -775,7 +770,6 @@ window.shareContent = async (title, url) => {
         }
     } else {
         navigator.clipboard.writeText(fullUrl);
-        // Sin alert
     }
 };
 
@@ -792,7 +786,6 @@ window.handlePlay = function(e, episodioId) {
         return false;
     }
 
-    // Intentar reproducir - SIN ALERTAS EXTRA, solo si hay error real
     try {
         window.playEpisodeExpanded(
             ep.mediaUrl,
@@ -806,7 +799,6 @@ window.handlePlay = function(e, episodioId) {
             ep.description,
             ep.allowDownload
         );
-        // El reproductor maneja sus propios errores
     } catch (err) {
         console.error('Error al reproducir:', err);
         showCustomAlert(ep.title, 'no está disponible por ahora.');
@@ -828,6 +820,7 @@ window.handleDl = function(e, episodioId) {
 
     const ext = ep.type === 'video' ? 'mp4' : 'mp3';
     const filename = `${ep.title.replace(/[^a-z0-9]/gi, '_').substring(0, 50)}.${ext}`;
+    
     try {
         const a = document.createElement('a');
         a.href = ep.mediaUrl;
@@ -836,17 +829,13 @@ window.handleDl = function(e, episodioId) {
         a.click();
         document.body.removeChild(a);
         
-        // Si la descarga no inicia (p.ej., por CORS), abrir en nueva pestaña como fallback
-        setTimeout(() => {
-            if (!a.href.startsWith('blob:')) {
-                window.open(ep.mediaUrl, '_blank');
-            }
-        }, 1000);
+        // Verificar si la descarga realmente se inició (opcional)
+        // Si el navegador no soporta download o hay error CORS, saltará al catch
     } catch (error) {
         console.error('Error en descarga:', error);
-        // Fallback: abrir en nueva pestaña
-        window.open(ep.mediaUrl, '_blank');
+        showCustomAlert(ep.title, 'no se pudo descargar automáticamente.');
     }
+    
     return false;
 };
 
