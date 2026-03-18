@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Balta Media</title>
     <!-- Etiquetas SEO -->
-    <link rel="canonical" href="https://media.baltaanay.org/" id="canonicalLink">
+    <link rel="canonical" href="https://balta-media.odoo.com/" id="canonicalLink">
     <link rel="alternate" media="only screen and (max-width: 640px)" href="https://app.baltaanay.org/" id="alternateLink">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Fuentes -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
     <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="https://media.baltaanay.org/web/image/885-f3d79ca9/xhbalta-aula.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="https://media.baltaanay.org/web/image/885-f3d79ca9/xhbalta-aula.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://balta-media.odoo.com/web/image/885-f3d79ca9/xhbalta-aula.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://balta-media.odoo.com/web/image/885-f3d79ca9/xhbalta-aula.png">
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="/styles.css">
 
@@ -293,19 +293,19 @@ import { episodios, getSerieById } from '/episodios.js';
         const nav = document.createElement('div');
         nav.className = 'sidebar-nav';
         nav.innerHTML = `
-            <a href="/" class="sidebar-nav-item" title="Home" data-link>
+            <a href="/" class="sidebar-nav-item" title="Inicio" data-link>
                 <img src="https://balta-media.odoo.com/web/image/798-1b947c8d/Home%20%282%29.webp" alt="Inicio" loading="lazy"><span>Inicio</span>
             </a>
-            <a href="/buscar" class="sidebar-nav-item" title="Explorar" data-link>
-                <img src="https://balta-media.odoo.com/web/image/986-2bf9d2bb/Search%20%282%29.webp" alt="Buscar" loading="lazy"><span>Buscar</span>
+            <a href="/buscar" class="sidebar-nav-item" title="Buscar" data-link>
+                <img src="https://balta-media.odoo.com/web/image/800-91a2fecc/Search%20%282%29.webp" alt="Buscar" loading="lazy"><span>Buscar</span>
             </a>
-            <a href="/subir" class="sidebar-nav-item" title="Cargar" data-link>
+            <a href="/subir" class="sidebar-nav-item" title="Explorar" data-link>
                 <img src="https://balta-media.odoo.com/web/image/796-aee658de/Explore.png" alt="Explorar" loading="lazy"><span>Explorar</span>
             </a>
-            <a href="https://www.baltaanay.org/solicitud" class="sidebar-nav-item" title="Solicitar">
-                <img src="https://balta-media.odoo.com/web/image/991-1c3c204a/subir.webp" alt="Crear" loading="lazy"><span>Crear</span>
+            <a href="https://www.baltaanay.org/solicitud" class="sidebar-nav-item" title="Crear">
+                <img src="https://balta-media.odoo.com/web/image/885-f3d79ca9/xhbalta-aula.png" alt="Crear" loading="lazy"><span>Crear</span>
             </a>
-            <a href="/my/home" class="sidebar-nav-item" title="Usuario" data-link>
+            <a href="/my/home" class="sidebar-nav-item" title="Biblioteca" data-link>
                 <img src="https://nikichitonjesus3.odoo.com/web/image/453-f4d8c1eb/user.png" alt="Biblioteca" loading="lazy"><span>Biblioteca</span>
             </a>
         `;
@@ -2983,7 +2983,7 @@ fullscreenBtn.addEventListener('click', (e) => {
     document.exitFullscreen().then(() => {
       isFullscreenMode = false;
       fullscreenControls.style.display = 'none';
-      loadImageWithFallback(fullscreenBtn.querySelector('img'), 'https://media.baltaanay.org/web/image/883-49c31be4/full.png', 'Fullscreen', 'https://via.placeholder.com/24');
+      loadImageWithFallback(fullscreenBtn.querySelector('img'), 'https://balta-media.odoo.com/web/image/883-49c31be4/full.png', 'Fullscreen', 'https://via.placeholder.com/24');
       overlayGradient.style.display = 'flex';
     });
   }
@@ -3006,7 +3006,7 @@ document.addEventListener('fullscreenchange', () => {
   if (!document.fullscreenElement) {
     isFullscreenMode = false;
     fullscreenControls.style.display = 'none';
-    loadImageWithFallback(fullscreenBtn.querySelector('img'), 'https://media.baltaanay.org/web/image/883-49c31be4/full.png', 'Fullscreen', 'https://via.placeholder.com/24');
+    loadImageWithFallback(fullscreenBtn.querySelector('img'), 'https://balta-media.odoo.com/web/image/883-49c31be4/full.png', 'Fullscreen', 'https://via.placeholder.com/24');
     overlayGradient.style.display = 'flex';
     clearTimeout(autoHideTimer);
   } else {
