@@ -16,8 +16,8 @@
     <link rel="icon" type="image/png" sizes="16x16" href="https://media.baltaanay.org/web/image/885-f3d79ca9/xhbalta-aula.png">
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="/styles.css">
-  
-    <!-- ESTILOS BASE (igual que antes) -->
+
+    <!-- ESTILOS BASE -->
     <style id="sidebar-base-styles">
         * {
             box-sizing: border-box;
@@ -163,6 +163,7 @@
         }
         .sidebar-rec-play-btn:hover { background: rgba(255,255,255,0.2); }
         .sidebar-rec-play-btn svg { width: 18px; height: 18px; fill: white; }
+
         /* MAIN AREA */
         .main-area {
             grid-area: main-area;
@@ -172,7 +173,6 @@
             overflow: hidden;
             position: relative;
         }
-        /* HEADER Y FILTROS */
         .header-container {
             position: sticky;
             top: 0;
@@ -206,7 +206,9 @@
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             padding: 1.25rem 1rem;
+            padding-bottom: 140px;   /* ← Espacio extra para footer / derechos de autor */
         }
+
         @media (max-width: 768px) {
             body {
                 grid-template-columns: 1fr;
@@ -216,8 +218,10 @@
     </style>
 </head>
 <body class="bg-[#050505] text-white font-[Plus_Jakarta_Sans]">
+
 <!-- Sidebar (se genera dinámicamente con JS) -->
 <aside class="sidebar-desktop collapsed" id="sidebarDesktop"></aside>
+
 <!-- Área principal -->
 <div class="main-area">
     <!-- Header + Filtros - Contenedor unificado para sticky -->
@@ -247,11 +251,14 @@
             </div>
         </div>
     </div>
+
     <!-- Contenido con scroll principal -->
     <main id="content"></main>
 </div>
-<!-- Reproductor flotante (estructura vacía, player.js lo llena) -->
+
+<!-- Reproductor flotante -->
 <div id="floating-player" class="fixed bottom-0 left-0 right-0 bg-[#1a1a1a] border-t border-[#333] p-3 flex items-center justify-between z-[10000] backdrop-blur hidden"></div>
+
 <!-- Modal de error -->
 <div id="errorModal" class="fixed inset-0 z-[10000] flex items-center justify-center hidden" style="background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);">
     <div class="bg-[#1e1e2f] rounded-2xl max-w-md w-full p-6 border border-white/10 shadow-2xl">
@@ -264,7 +271,8 @@
         </div>
     </div>
 </div>
-<!-- Script sidebar (NO EL ROUTER) -->
+
+<!-- Script sidebar -->
 <script type="module">
 import { episodios, getSerieById } from '/episodios.js';
 (function() {
@@ -274,10 +282,12 @@ import { episodios, getSerieById } from '/episodios.js';
         currentState: localStorage.getItem('sidebar_state') || 'collapsed',
         isMobile: window.innerWidth <= SIDEBAR_CONFIG.BREAKPOINT
     };
+
     function getRandomEpisodes(count = 12) {
         const shuffled = [...episodios].sort(() => 0.5 - Math.random());
         return shuffled.slice(0, count);
     }
+
     function renderSidebar() {
         const sidebar = document.createElement('aside');
         sidebar.className = `sidebar-desktop ${sidebarInstance.currentState}`;
@@ -318,6 +328,7 @@ import { episodios, getSerieById } from '/episodios.js';
         sidebar.appendChild(recSection);
         return sidebar;
     }
+
     function populateRecommendations() {
         const container = document.getElementById('sidebarRecList');
         if (!container) return;
@@ -364,6 +375,7 @@ import { episodios, getSerieById } from '/episodios.js';
             container.appendChild(item);
         });
     }
+
     function setActiveNavItem() {
         const currentPath = window.location.pathname;
         document.querySelectorAll('.sidebar-nav-item').forEach(item => {
@@ -375,6 +387,7 @@ import { episodios, getSerieById } from '/episodios.js';
             );
         });
     }
+
     function initSidebarToggle() {
         const sidebar = document.getElementById('sidebarDesktop');
         const toggle = document.getElementById('sidebarDesktopToggle');
@@ -395,6 +408,7 @@ import { episodios, getSerieById } from '/episodios.js';
             localStorage.setItem('sidebar_state', isCollapsed ? 'expanded' : 'collapsed');
         });
     }
+
     function initSidebar() {
         sidebarInstance.isMobile = window.innerWidth <= SIDEBAR_CONFIG.BREAKPOINT;
         const oldSidebar = document.querySelector('.sidebar-desktop');
@@ -407,11 +421,13 @@ import { episodios, getSerieById } from '/episodios.js';
         setActiveNavItem();
         sidebarInstance.initialized = true;
     }
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initSidebar);
     } else {
         initSidebar();
     }
+
     window.addEventListener('resize', () => {
         const wasMobile = sidebarInstance.isMobile;
         const isMobileNow = window.innerWidth <= SIDEBAR_CONFIG.BREAKPOINT;
@@ -420,8 +436,10 @@ import { episodios, getSerieById } from '/episodios.js';
             initSidebar();
         }
     });
+
     document.addEventListener('spa-navigation', setActiveNavItem);
     window.addEventListener('popstate', setActiveNavItem);
+
     window.sidebarAPI = {
         refresh: populateRecommendations,
         setActive: setActiveNavItem,
@@ -442,7 +460,38 @@ import { episodios, getSerieById } from '/episodios.js';
     };
 })();
 </script>
-<!-- Cargar el router principal (main.js) -->
+
+<!-- === HEADER HIDE ON SCROLL + FOOTER SPACE (nuevo) === -->
+<script>
+    // Header desaparece al bajar y reaparece al subir
+    let lastScrollTop = 0;
+    const headerContainer = document.getElementById('headerContainer');
+    const SCROLL_THRESHOLD = 60;
+
+    function handleHeaderScroll() {
+        const st = window.scrollY || document.documentElement.scrollTop;
+
+        if (Math.abs(st - lastScrollTop) < 10) return;
+
+        if (st > lastScrollTop && st > SCROLL_THRESHOLD) {
+            headerContainer.classList.add('hidden');
+        } else {
+            headerContainer.classList.remove('hidden');
+        }
+
+        lastScrollTop = st <= 0 ? 0 : st;
+    }
+
+    const content = document.getElementById('content');
+    content.addEventListener('scroll', handleHeaderScroll, { passive: true });
+    window.addEventListener('scroll', handleHeaderScroll, { passive: true });
+
+    // Opcional: si quieres agregar un footer fijo al final del contenido
+    // Puedes llamarlo desde tu main.js después de renderizar el contenido:
+    // document.getElementById('content').insertAdjacentHTML('beforeend', footerHTML);
+</script>
+
+<!-- Cargar el router principal -->
 <script type="module" src="/main.js"></script>
 </body>
 </html>
