@@ -1,4 +1,4 @@
-// show.js - Vistas del feed, episodio, serie, etc. - VERSIÓN MEJORADA
+// show.js - Vistas del feed, episodio, serie, etc. - VERSIÓN DEFINITIVA CORREGIDA
 import { getAllEpisodios, getSerieById, getEpisodiosBySerieId, getEpisodiosConSerie } from './episodios.js';
 import { userStorage } from './storage.js';
 import './player.js';
@@ -21,7 +21,7 @@ const CATEGORIES = [
     "Tecnología e Informática", "Otras Ciencias"
 ];
 
-// ---------- ESTILOS GLOBALES ----------
+// ---------- ESTILOS GLOBALES (fondo degradado) ----------
 const GLOBAL_STYLES = `
     <style>
         body {
@@ -34,6 +34,13 @@ const GLOBAL_STYLES = `
         .card-std, .card-video, .grid-card, .list-item, .detail-view, .serie-header {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(2px);
+        }
+        /* Ajuste para carrusel double (Mix de Saberes y Humanidades) */
+        .carousel-double .flex-col {
+            gap: 0.75rem; /* reducir espacio entre filas */
+        }
+        .carousel-double .card-std {
+            margin-bottom: 0;
         }
     </style>
 `;
@@ -82,7 +89,7 @@ export const DATA = getEpisodiosConSerie().map(ep => ({
     categories: determineCategories(ep)
 }));
 
-// ---------- RENDERIZADO DE TARJETAS (con botón añadir/quitar mejorado) ----------
+// ---------- RENDERIZADO DE TARJETAS (con botones que NO redirigen) ----------
 export function createStandardCard(ep) {
     const inPlaylist = userStorage.playlist.has(ep.id);
     const addIcon = inPlaylist ? ICONS.added : ICONS.add;
@@ -161,10 +168,11 @@ export function createListItem(ep, idx) {
             <!-- Índice -->
             <span class="text-gray-400 font-semibold w-6 text-center text-sm flex-shrink-0">${idx + 1}</span>
             
-            <!-- Cover -->
+            <!-- Cover (solo para navegar a detalle) -->
             <div class="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer"
                  onclick="window.goToDetail('${ep.detailUrl}')">
                 <img src="${ep.coverUrl}" class="w-full h-full object-cover" loading="lazy">
+                <!-- Play superpuesto (también invoca reproductor) -->
                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
                      onclick="window.handlePlay(event, '${ep.id}'); return false;">
                     <img src="${ICONS.play}" class="w-5 h-5">
@@ -218,9 +226,11 @@ function createCarousel(title, type, items, categoryContext, viewAllType = 'cate
     if (!items || items.length === 0) return '';
     const id = 'c-' + Math.random().toString(36).substr(2, 9);
     let content = '';
+    let extraClass = '';
     
     if (type === 'double') {
-        content = `<div id="${id}" class="flex flex-col flex-wrap h-[580px] gap-x-6 gap-y-6 overflow-x-auto no-scrollbar scroll-smooth">` +
+        extraClass = 'carousel-double';
+        content = `<div id="${id}" class="flex flex-col flex-wrap h-[580px] gap-x-6 gap-y-3 overflow-x-auto no-scrollbar scroll-smooth">` +
             items.map(ep => createStandardCard(ep)).join('') +
             `</div>`;
     } else if (type === 'list') {
@@ -252,13 +262,15 @@ function createCarousel(title, type, items, categoryContext, viewAllType = 'cate
     let verTodoHandler;
     if (viewAllType === 'series') {
         verTodoHandler = `window.showSeriesGrid('${title}')`;
-    } else if (categoryContext !== 'Todos') {
+    } else if (categoryContext && categoryContext !== 'Todos') {
         verTodoHandler = `window.handleCategoryClick('${categoryContext}')`;
     } else {
-        verTodoHandler = `window.showItemsGrid('${title}', ${JSON.stringify(items.map(ep => ep.id))})`;
+        // Si no hay categoría específica, mostrar los mismos items en grid
+        const itemIds = JSON.stringify(items.map(ep => ep.id));
+        verTodoHandler = `window.showItemsGrid('${title}', ${itemIds})`;
     }
     
-    return `<section class="carousel-wrapper relative group/section mb-8 sm:mb-12">
+    return `<section class="carousel-wrapper relative group/section mb-8 sm:mb-12 ${extraClass}">
         <div class="flex items-end justify-between mb-3 sm:mb-5 px-1">
             <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white hover:text-blue-400 transition-colors cursor-pointer" onclick="${verTodoHandler}">${title}</h2>
             <button onclick="${verTodoHandler}" class="text-xs font-bold text-gray-500 uppercase tracking-wider hover:text-white transition-colors">Ver todo</button>
@@ -334,7 +346,7 @@ function createSeriesCarousel() {
     </section>`;
 }
 
-// ---------- VISTAS DE DETALLE ----------
+// ---------- VISTAS DE DETALLE (con botones que NO redirigen) ----------
 export function renderEpisodio(container, episodioId) {
     try {
         const ep = DATA.find(e => e.id === episodioId);
@@ -574,64 +586,64 @@ export function renderFeed(container) {
     
     // Nuevo carrusel vertical al inicio (4:5)
     feedView.innerHTML += createCarousel("Destacados del Día", "vertical",
-        getRandomSafe(15), "Todos", "category");
+        getRandomSafe(15), "Todos", 'items');
     
     feedView.innerHTML += createCarousel("Nuevos Lanzamientos", "standard",
-        getRandomSafe(15, ep => new Date(ep.date) > new Date(Date.now() - 30*24*60*60*1000)), "Todos", "category");
+        getRandomSafe(15, ep => new Date(ep.date) > new Date(Date.now() - 30*24*60*60*1000)), "Todos", 'items');
     
     feedView.innerHTML += createCarousel("Series de Video", "expand",
-        getRandomSafe(10, e => e.type === 'video'), "Cine y TV", "category");
+        getRandomSafe(10, e => e.type === 'video'), "Cine y TV", 'category');
     
     feedView.innerHTML += createCarousel("Top Semanal", "list",
-        getRandomSafe(16), "Todos", "category");
+        getRandomSafe(16), "Todos", 'items');
     
     feedView.innerHTML += createCarousel("Para Estudiar Profundamente", "double",
-        getRandomSafe(20, e => e.categories.includes("Matemáticas") || e.categories.includes("Física y Astronomía")), "Matemáticas", "category");
+        getRandomSafe(20, e => e.categories.includes("Matemáticas") || e.categories.includes("Física y Astronomía")), "Matemáticas", 'category');
     
     feedView.innerHTML += createCarousel("Matemáticas", "standard",
-        getRandomSafe(15, e => e.categories.includes("Matemáticas")), "Matemáticas", "category");
+        getRandomSafe(15, e => e.categories.includes("Matemáticas")), "Matemáticas", 'category');
     
     feedView.innerHTML += createCarousel("Especiales en Video", "expand",
-        getRandomSafe(10, e => e.type === 'video' && e.categories.includes("Documentales")), "Documentales", "category");
+        getRandomSafe(10, e => e.type === 'video' && e.categories.includes("Documentales")), "Documentales", 'category');
     
     feedView.innerHTML += createCarousel("Física y Astronomía", "standard",
-        getRandomSafe(15, e => e.categories.includes("Física y Astronomía")), "Física y Astronomía", "category");
+        getRandomSafe(15, e => e.categories.includes("Física y Astronomía")), "Física y Astronomía", 'category');
     
     feedView.innerHTML += createCarousel("Ciencias Naturales y Tecnología", "double",
-        getRandomSafe(20, e => e.categories.some(c => ["Ciencias Naturales", "Tecnología e Informática"].includes(c))), "Otras Ciencias", "category");
+        getRandomSafe(20, e => e.categories.some(c => ["Ciencias Naturales", "Tecnología e Informática"].includes(c))), "Otras Ciencias", 'category');
     
     feedView.innerHTML += createSeriesCarousel();
     
-    // Humanidades y Sociedad (ahora con estilo double como Mix de Saberes)
-    feedView.innerHTML += createCarousel("Humanidades y Sociedad", "double",
+    // Carrusel de Humanidades y Sociedad (ahora con estilo double y contenido enriquecido)
+    feedView.innerHTML += createCarousel("Sociedad, Política y Economía", "double",
         getRandomSafe(20, e => e.categories.some(c => 
             ["Historia", "Filosofía", "Ciencias Sociales", "Arte y Cultura", "Economía y Finanzas"].includes(c) ||
-            /\b(geopolítica|geopolitica|política|politica|sociedad|humano|cultura|identidad)\b/i.test(e.title + ' ' + e.description)
-        )), "Ciencias Sociales", "category");
+            /\b(geopolítica|geopolitica|política|politica|sociedad|humano|cultura|identidad|conflicto|guerra|paz|democracia|gobierno)\b/i.test(e.title + ' ' + e.description)
+        )), "Ciencias Sociales", 'category');
     
     feedView.innerHTML += createCarousel("Otras Ciencias y Disciplinas", "standard",
         getRandomSafe(15, e => e.categories.includes("Otras Ciencias") ||
             e.categories.some(c => ["Ciencias Naturales", "Tecnología e Informática"].includes(c))),
-        "Otras Ciencias", "category");
+        "Otras Ciencias", 'category');
     
     feedView.innerHTML += createCarousel("Imprescindibles del Mes", "list",
-        getRandomSafe(16, e => new Date(e.date) > new Date(Date.now() - 60*24*60*60*1000)), "Todos", "category");
+        getRandomSafe(16, e => new Date(e.date) > new Date(Date.now() - 60*24*60*60*1000)), "Todos", 'items');
     
     feedView.innerHTML += createCarousel("Podcasts Destacados", "standard",
-        getRandomSafe(15, e => e.type === 'audio'), "Todos", "category");
+        getRandomSafe(15, e => e.type === 'audio'), "Todos", 'items');
     
     feedView.innerHTML += createCarousel("Charlas y Conferencias", "expand",
-        getRandomSafe(10, e => e.type === 'video' && (e.categories.includes("Cine y TV") || e.categories.includes("Documentales"))), "Cine y TV", "category");
+        getRandomSafe(10, e => e.type === 'video' && (e.categories.includes("Cine y TV") || e.categories.includes("Documentales"))), "Cine y TV", 'category');
     
-    // Mentes Curiosas (ahora con contenido de investigación, criminalismo, guerras, conflictos)
+    // Mentes Curiosas (investigación, criminalismo, guerras, conflictos)
     feedView.innerHTML += createCarousel("Mentes Curiosas", "standard",
         getRandomSafe(15, e => 
             /\b(investigación|investigacion|criminalística|criminalistica|crimen|delito|forense|guerra|conflicto|violencia|seguridad|policía|policia|detective|asesinato|homicidio|justicia|penal|legal|sociedad|problema social)\b/i
             .test(e.title + ' ' + e.description + ' ' + (e.series?.titulo_serie || ''))
-        ), "Derecho", "category");
+        ), "Derecho", 'category');
     
     feedView.innerHTML += createCarousel("Mix de Saberes", "double",
-        getRandomSafe(20), "Todos", "category");
+        getRandomSafe(20), "Todos", 'items');
 }
 
 // ---------- RENDER GRID (para resultados de búsqueda, categorías, etc.) ----------
@@ -767,9 +779,6 @@ window.shareContent = async (title, url) => {
     }
 };
 
-// Variable para controlar el timeout de reproducción
-let playTimeout = null;
-
 window.handlePlay = function(e, episodioId) {
     e.stopPropagation();
     e.stopImmediatePropagation();
@@ -783,14 +792,9 @@ window.handlePlay = function(e, episodioId) {
         return false;
     }
 
-    // Limpiar timeout anterior si existe
-    if (playTimeout) {
-        clearTimeout(playTimeout);
-    }
-
     // Intentar reproducir
     try {
-        const playSuccess = window.playEpisodeExpanded(
+        window.playEpisodeExpanded(
             ep.mediaUrl,
             ep.type,
             ep.coverUrl,
@@ -802,23 +806,8 @@ window.handlePlay = function(e, episodioId) {
             ep.description,
             ep.allowDownload
         );
-
-        // Si la función devuelve false inmediatamente, mostrar alerta
-        if (playSuccess === false) {
-            showCustomAlert(ep.title, 'no está disponible por ahora.');
-            return false;
-        }
-
-        // Configurar timeout para verificar si realmente se reprodujo
-        playTimeout = setTimeout(() => {
-            // Verificar si el reproductor está reproduciendo
-            const player = document.querySelector('audio, video');
-            if (!player || player.paused) {
-                showCustomAlert(ep.title, 'no pudo reproducirse. Verifica tu conexión.');
-            }
-            playTimeout = null;
-        }, 5000); // 5 segundos de espera
-
+        // No mostramos alerta a menos que ocurra un error real en el reproductor
+        // El reproductor debería manejar sus propios errores
     } catch (err) {
         console.error('Error al reproducir:', err);
         showCustomAlert(ep.title, 'no está disponible por ahora.');
@@ -868,7 +857,7 @@ window.handleAdd = function(e, episodioId) {
         userStorage.playlist.add(ep);
     }
 
-    // Actualizar TODOS los iconos de añadir para este episodio
+    // Actualizar TODOS los iconos de añadir para este episodio en toda la página
     document.querySelectorAll(`[data-episodio-id="${episodioId}"] img[data-added], [data-episodio-id="${episodioId}"] .action-icon[data-added]`)
         .forEach(img => {
             if (img.tagName === 'IMG') {
@@ -937,7 +926,7 @@ if (document.readyState === 'loading') {
     renderCategoryPills();
 }
 
-// ---------- ALERTA PERSONALIZADA ----------
+// ---------- ALERTA PERSONALIZADA (solo para errores reales) ----------
 function showCustomAlert(title, message) {
     const fullMessage = `"${title}" ${message}`;
     
@@ -969,4 +958,4 @@ function showCustomAlert(title, message) {
     });
 }
 
-console.log('✅ show.js cargado completamente - versión MEJORADA');
+console.log('✅ show.js cargado completamente - versión DEFINITIVA CORREGIDA');
