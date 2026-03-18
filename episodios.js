@@ -16,7 +16,7 @@ function slugify(text) {
 export const series = [
     {
         seriesid: "teoria-del-proceso",
-        portada_serie: 'https://media.baltaanay.org/web/image/658-redirect/960bc627aab97e6134955b4d5d1c99d0.jpg',
+        portada_serie: 'https://balta-media.odoo.com/web/image/658-redirect/960bc627aab97e6134955b4d5d1c99d0.jpg',
         titulo_serie: 'Teoría del proceso',
         descripcion_serie: 'Proceso en el derecho y la forma de poner en movimiento la maquinaria de Justicia',
         url_serie: '/teoria-del-proceso'
@@ -37,22 +37,22 @@ export const series = [
     },
     {
         seriesid: "ddpp-3-clases",
-        portada_serie: 'https://media.baltaanay.org/web/image/925-6ed84678/DERECHO%20PENAL%20III.png',
+        portada_serie: 'https://balta-media.odoo.com/web/image/925-6ed84678/DERECHO%20PENAL%20III.png',
         titulo_serie: 'Derecho penal 3',
         descripcion_serie: 'Derecho Público',
         url_serie: '/ddpp-3/clases'
     },
     {
         seriesid: "dp-indigenas",
-        portada_serie: 'https://media.baltaanay.org/web/image/927-edc793ab/Pueblos%20ind%C3%ADgenas.png',
+        portada_serie: 'https://balta-media.odoo.com/web/image/1031-a693e9ca/Pueblos%20ind%C3%ADgenas.webp',
         titulo_serie: 'Derecho de los pueblos indígenas',
         descripcion_serie: 'Los derechos de tercera generación. Desarrolla los derechos de los pueblos indígenas o también conocidos como derechos de solidaridad.',
         url_serie: '/dp-indigenas'
     },
     {
         seriesid: "derecho-laboral-1",
-        portada_serie: 'https://media.baltaanay.org/web/image/929-b905c3ef/DERECHO%20LABORAL.png',
-        titulo_serie: 'Derecho Laboral',
+        portada_serie: 'https://balta-media.odoo.com/web/image/1030-545c090f/DERECHO%20LABORAL.webp',
+        titulo_serie: 'Derecho Laboral 1',
         descripcion_serie: 'Un derecho humano por excelencia. Es la ciencia, una disciplina pública. Ciencias Sociales.',
         url_serie: '/derecho-laboral-1'
     }
@@ -120,7 +120,7 @@ const episodiosBase = [
         date: '2026-02-10',
         mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-1-13/418061888-44100-2-bd0c488cd9ace.m4a",
         type: "audio",
-        coverUrl: 'https://media.baltaanay.org/web/image/925-6ed84678/DERECHO%20PENAL%20III.png',
+        coverUrl: 'https://balta-media.odoo.com/web/image/925-6ed84678/DERECHO%20PENAL%20III.png',
         title: "Corrientes de la teoría del delito",
         author: "Lemus",
         description: "Continuación de las corrientes de la teoría del delito. Teoría causalista, finalista y funcionalista.",
@@ -133,7 +133,7 @@ const episodiosBase = [
         date: '2026-02-03',
         mediaUrl: "https://lb.s3.odysee.tv/vods2.odysee.live/odysee-replays/dd57d90536480f9a751ba4429447fd5f613efce3/1770150346.mp4",
         type: "video",
-        coverUrl: 'https://media.baltaanay.org/web/image/925-6ed84678/DERECHO%20PENAL%20III.png',
+        coverUrl: 'https://balta-media.odoo.com/web/image/925-6ed84678/DERECHO%20PENAL%20III.png',
         title: "La teoría causalista",
         author: "Lemus",
         description: "Desarrollo de la teoría causalista. Derecho Penal 3. Historia, Ciencia.",
@@ -146,7 +146,7 @@ const episodiosBase = [
         date: '2026-01-29',
         mediaUrl: "https://podcasts.com/api/download-episode/214790939",
         type: "audio",
-        coverUrl: 'https://media.baltaanay.org/web/image/925-6ed84678/DERECHO%20PENAL%20III.png',
+        coverUrl: 'https://balta-media.odoo.com/web/image/925-6ed84678/DERECHO%20PENAL%20III.png',
         title: "¿Qué es el Derecho Penal?",
         author: "Lemus",
         description: "Conjunto de normas jurídicas de naturaleza pública que regulan los delitos, las penas y las medidas de seguridad. Ciencia pública. Derecho, Historia.",
@@ -159,7 +159,7 @@ const episodiosBase = [
         date: '2026-02-12',
         mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-1-13/418069738-44100-2-616f210f1eb48.m4a",
         type: "audio",
-        coverUrl: 'https://media.baltaanay.org/web/image/925-6ed84678/DERECHO%20PENAL%20III.png',
+        coverUrl: 'https://balta-media.odoo.com/web/image/925-6ed84678/DERECHO%20PENAL%20III.png',
         title: "La tipicidad y los elementos del delito",
         author: "Lemus",
         description: "Análisis profundo del concepto de tipicidad en derecho y sociedad. Una mirada crítica y actual. Ciencia.",
@@ -172,7 +172,7 @@ const episodiosBase = [
         date: '2026-02-06',
         mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-1-13/418064713-44100-2-ed2c58b07cd6.m4a",
         type: "audio",
-        coverUrl: 'https://media.baltaanay.org/web/image/927-edc793ab/Pueblos%20ind%C3%ADgenas.png',
+        coverUrl: 'https://balta-media.odoo.com/web/image/927-edc793ab/Pueblos%20ind%C3%ADgenas.png',
         title: "Crisis del Estado de Derecho",
         author: "Raymundo",
         description: "La crisis del Estado de Derecho. Por Lic. Raymundo Catz. El estado de derecho en crisis por los derechos de segunda y tercera generación.",
@@ -185,7 +185,7 @@ const episodiosBase = [
         date: '2026-02-04',
         mediaUrl: "https://lb.s3.odysee.tv/vods2.odysee.live/odysee-replays/dd57d90536480f9a751ba4429447fd5f613efce3/1770236623.mp4",
         type: "video",
-        coverUrl: 'https://media.baltaanay.org/web/image/927-edc793ab/Pueblos%20ind%C3%ADgenas.png',
+        coverUrl: 'https://balta-media.odoo.com/web/image/927-edc793ab/Pueblos%20ind%C3%ADgenas.png',
         title: "Conceptos básicos de los Derechos Humanos",
         author: "Raymundo",
         description: "Conceptos básicos de los Derechos Humanos",
@@ -198,7 +198,7 @@ const episodiosBase = [
         date: '2026-02-02',
         type: 'video',
         mediaUrl: 'https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-1-2/417347225-44100-2-38463f72786e9.m4a',
-        coverUrl: 'https://media.baltaanay.org/web/image/929-b905c3ef/DERECHO%20LABORAL.png',
+        coverUrl: 'https://balta-media.odoo.com/web/image/929-b905c3ef/DERECHO%20LABORAL.png',
         title: 'Antecedentes Históricos del derecho de Trabajo',
         description: 'Antecedentes históricos del derecho de trabajo. Avidan Ortiz. Historia del derecho Laboral.',
         allowDownload: false,
@@ -211,7 +211,7 @@ const episodiosBase = [
         date: '2026-02-06',
         type: 'video',
         mediaUrl: 'https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-1-13/ca5f6f25-3b96-ff31-bb04-e712a81ce076.m4a',
-        coverUrl: 'https://media.baltaanay.org/web/image/929-b905c3ef/DERECHO%20LABORAL.png',
+        coverUrl: 'https://balta-media.odoo.com/web/image/929-b905c3ef/DERECHO%20LABORAL.png',
         title: 'Fuentes del Derecho de Trabajo',
         description: 'Historia. Fuentes del Derecho de trabajo. Ciencia.',
         allowDownload: false,
@@ -231,6 +231,19 @@ const episodiosBase = [
         author: "Melany y Laura",
         seriesid: "ddhh",
         detailUrl: '/dh/caso-veliz-franco-vs-guatemala' // personalizado
+    },
+    {
+        id: "analisis-art-321-c-penal",
+        date: '2026-03-17',
+        mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-1-13/418069738-44100-2-616f210f1eb48.m4a",
+        type: "audio",
+        coverUrl: 'https://balta-media.odoo.com/web/image/925-6ed84678/DERECHO%20PENAL%20III.png',
+        title: "Análisis Artículo 321 Código Penal",
+        author: "Lemus",
+        description: "Análisis de los artículos 321 y 322. Falsedad material y falsedad idieolígica. Derecho Penal Guatemalteco. Delitos. Criminal. Derehcos Humanos. Ciencia. Investigación.",
+        allowDownload: false,
+        seriesid: "ddpp-3-clases",
+        // Sin detailUrl personalizado
     }
 ];
 
