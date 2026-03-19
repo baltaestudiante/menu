@@ -62,6 +62,13 @@ export const series = [
         titulo_serie: 'Derecho Civil 3',
         descripcion_serie: 'Contratos. Sociedad. Mercado. Economía. Derecho Privado. Sociedad.',
         url_serie: '/derecho-civil-3'
+    },
+    {
+        seriesid: "el-mundo-de-la-quimica",
+        portada_serie: 'https://canal.uned.es/uploads/pic/Serial/296/Video/7848/5385eb3e1d0c7.png',
+        titulo_serie: 'El Mundo de la Química',
+        descripcion_serie: 'Ciencas Naturales. Tecnología. Ciencia. Química. Biología',
+        url_serie: '/m-quimica'
     }
 ];
 
@@ -201,9 +208,22 @@ const episodiosBase = [
         // Sin detailUrl personalizado
     },
     {
+        id: "racismo-despojo",
+        date: '2026-02-27',
+        mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-1-28/418987705-44100-2-8e6e4199302ae.m4a",
+        type: "audio",
+        coverUrl: 'https://balta-media.odoo.com/web/image/927-edc793ab/Pueblos%20ind%C3%ADgenas.png',
+        title: "El despojo y el racismo",
+        author: "Raymundo",
+        description: "Continuidad del tema: El despojo en Guatemala de las tierras indígenas. Y un análisis del racismo en Guatemala. Guerra, conflicto",
+        allowDownload: false,
+        seriesid: "dp-indigenas",
+        detailUrl: '/dp-indigenas/despojo-y-racismo'
+    },
+    {
         id: "antecedentes-derecho-trabajo",
         date: '2026-02-02',
-        type: 'video',
+        type: 'audio',
         mediaUrl: 'https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-1-2/417347225-44100-2-38463f72786e9.m4a',
         coverUrl: 'https://balta-media.odoo.com/web/image/929-b905c3ef/DERECHO%20LABORAL.png',
         title: 'Antecedentes Históricos del derecho de Trabajo',
@@ -212,6 +232,32 @@ const episodiosBase = [
         author: "Avidan Ortiz",
         seriesid: "derecho-laboral-1",
         // Sin detailUrl personalizado
+    },
+    {
+        id: "derechos-sociales-minimos",
+        date: '2026-02-17',
+        type: 'audio',
+        mediaUrl: 'https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-1-18/418308999-44100-2-4ae99683be33e.m4a',
+        coverUrl: 'https://balta-media.odoo.com/web/image/929-b905c3ef/DERECHO%20LABORAL.png',
+        title: 'Derechos sociales mínimos (DL)',
+        description: 'Derechos sociales mínimos del derecho de trabajo. Consitución. Son derechos sociales mínimos que fundamentan la legislación del trabajo y la actividad de los tribunales y autoridades.',
+        allowDownload: false,
+        author: "Avidan Ortiz",
+        seriesid: "derecho-laboral-1",
+        detailUrl: '/derecho-laboral-1/ds-minimos'
+    },
+    {
+        id: "fundamento-constitucional-laboral",
+        date: '2026-02-27',
+        type: 'audio',
+        mediaUrl: 'https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-1-28/418987766-44100-2-e2401169376bd.m4a',
+        coverUrl: 'https://balta-media.odoo.com/web/image/929-b905c3ef/DERECHO%20LABORAL.png',
+        title: 'Fundamento Constitucional Laboral',
+        description: 'Fundamento constitucional del derecho de trabajo. Artículos 108 al 117 de la Constitución Política de la República de Guatemala.',
+        allowDownload: false,
+        author: "Avidan Ortiz",
+        seriesid: "derecho-laboral-1",
+        detailUrl: '/derecho-laboral-1/constitucional'
     },
     {
         id: "fuentes-derecho-trabajo",
@@ -382,6 +428,56 @@ const episodiosBase = [
         seriesid: "derecho-civil-3",
         detailUrl: '/derecho-civil-3/clase-10'
     },
+    {
+        id: "el-atomo-6",
+        date: '1988-01-01',
+        mediaUrl: "https://archive.org/download/mundo-quimica-atomo/emq-atomo.mp4",
+        type: "video",
+        coverUrl: 'https://archive.org/download/mundo-quimica-atomo/atomo.jpg',
+        title: "El átomo episodio 6",
+        author: "University of Maryland",
+        description: "El mundo de la química. Ciencias Naturales. Tecnología. La ciencia atómica. Biología. Química. TV. Cine. Serie",
+        allowDownload: false,
+        seriesid: "el-mundo-de-la-quimica",
+        detailUrl: '/m-quimica/episodio-6'
+    },
+    {
+        id: "el-atomo-1",
+        date: '1988-01-01',
+        mediaUrl: "https://archive.org/download/mundo-quimica-1/EMQ-0101.mp4",
+        type: "video",
+        coverUrl: 'https://dn721602.ca.archive.org/0/items/mundo-quimica-1/__ia_thumb.jpg',
+        title: "El átomo episodio 1",
+        author: "University of Maryland",
+        description: "El mundo de la química. Ciencias Naturales. Tecnología. La ciencia atómica. Biología. Química. Cine. TV. Serie.",
+        allowDownload: false,
+        seriesid: "el-mundo-de-la-quimica",
+        detailUrl: '/m-quimica/episodio-1'
+    },
+    {
+        id: "queen-isablella-1",
+        date: '2023-09-17',
+        mediaUrl: "https://archive.org/download/cccomd-Queen_Isabella_I_en_Espanol/Queen_Isabella_I_en_Espanol.mp4",
+        type: "video",
+        coverUrl: 'https://dn721802.ca.archive.org/0/items/cccomd-Queen_Isabella_I_en_Espanol/__ia_thumb.jpg',
+        title: "Reina Isablea clip",
+        author: "Charlie",
+        description: "Historia. Ciencia. TV. Cine. ",
+        allowDownload: false,
+        detailUrl: '/queen-isabella'
+    },
+    {
+        id: "electromagnetismo-efectos",
+        date: '2024-10-03',
+        mediaUrl: "https://archive.org/download/4-efectos-de-las-radiaciones-electromagneticas-sobre-el-adn-5-g-documental-en-espanol/4_Efectos%20de%20las%20radiaciones%20electromagn%C3%A9ticas%20sobre%20el%20ADN%20%285G%29%20%20%20Documental%20en%20Espa%C3%B1ol.mp4",
+        type: "video",
+        coverUrl: 'https://archive.org/download/4-efectos-de-las-radiaciones-electromagneticas-sobre-el-adn-5-g-documental-en-espanol/4-efectos-de-las-radiaciones-electromagneticas-sobre-el-adn-5-g-documental-en-espanol.thumbs/4_Efectos%20de%20las%20radiaciones%20electromagn%C3%A9ticas%20sobre%20el%20ADN%20%285G%29%20%20%20Documental%20en%20Espa%C3%B1ol_000001.jpg',
+        title: "Efectos De Las Radiaciones Electromagnéticas Sobre El ADN",
+        author: "University of Maryland",
+        description: "El mundo de la química. Ciencias Naturales. Tecnología. La ciencia atómica. Biología. Química. El documental sobre el efecto de las radiaciones electromagnéticas sobre el ADN explora cómo la exposición a radiaciones de alta energía, como los rayos ultravioleta y las radiaciones ionizantes, puede provocar daños graves en el ADN celular. Estos daños pueden incluir mutaciones, ruptura de cadenas de ADN, y alteraciones que, si no son reparadas por los mecanismos celulares, podrían transmitirse a las células hijas, con el potencial de causar enfermedades como el cáncer. El documental destaca la importancia de la protección frente a estas radiaciones. Medicina. Biología. Ciencia. Química.",
+        allowDownload: false,
+        detailUrl: '/electromagnetismo-efectos-4'
+    }
 ];
 
 // ---------- FUNCIÓN PARA ASIGNAR detailUrl AUTOMÁTICAMENTE ----------
