@@ -299,6 +299,19 @@ const episodiosBase = [
         // Sin detailUrl personalizado
     },
     {
+        id: "analisis-art-323-326-c-penal",
+        date: '2026-03-19',
+        mediaUrl: "https://podcasts.com/api/download-episode/214799043",
+        type: "audio",
+        coverUrl: 'https://balta-media.odoo.com/web/image/925-6ed84678/DERECHO%20PENAL%20III.png',
+        title: "Análisis Artículos 323 a 326 Código Penal",
+        author: "Lemus",
+        description: "Análisis de los artículos 321 y 322. Falsedad material y falsedad idieolígica. Derecho Penal Guatemalteco. Delitos. Criminal. Derehcos Humanos. Ciencia. Investigación.",
+        allowDownload: false,
+        seriesid: "ddpp-3-clases",
+        detailUrl: '/ddpp-3-clases/323-326'
+    },
+    {
         id: "derecho-de-obligaciones",
         date: '2026-01-28',
         mediaUrl: "https://d3ctxlq1ktw2nl.cloudfront.net/staging/2026-2-6/419435680-44100-2-430de7e946de8.m4a",
