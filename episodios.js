@@ -307,7 +307,7 @@ const episodiosBase = [
         title: "Análisis Artículos 323 a 326 Código Penal",
         author: "Lemus",
         description: "Análisis de los artículos 321 y 322. Falsedad material y falsedad idieolígica. Derecho Penal Guatemalteco. Delitos. Criminal. Derehcos Humanos. Ciencia. Investigación.",
-        allowDownload: false,
+        allowDownload: true,
         seriesid: "ddpp-3-clases",
         detailUrl: '/ddpp-3-clases/323-326'
     },
@@ -473,7 +473,7 @@ const episodiosBase = [
         mediaUrl: "https://archive.org/download/cccomd-Queen_Isabella_I_en_Espanol/Queen_Isabella_I_en_Espanol.mp4",
         type: "video",
         coverUrl: 'https://dn721802.ca.archive.org/0/items/cccomd-Queen_Isabella_I_en_Espanol/__ia_thumb.jpg',
-        title: "Reina Isablea clip",
+        title: "Reina Isabela clip",
         author: "Charlie",
         description: "Historia. Ciencia. TV. Cine. ",
         allowDownload: false,
