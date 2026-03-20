@@ -1,4 +1,4 @@
-// show.js - Vistas del feed, episodio, serie, etc. - VERSIÓN MEJORADA CON TODAS LAS FUNCIONALIDADES
+// show.js - Vistas del feed, episodio, serie, etc. - VERSIÓN DEFINITIVA CON CAPTURA DE EVENTOS
 import { getAllEpisodios, getSerieById, getEpisodiosBySerieId, getEpisodiosConSerie } from './episodios.js';
 import { userStorage } from './storage.js';
 import './player.js';
@@ -247,16 +247,14 @@ function createCarousel(title, type, items, categoryContext, viewAllType = 'cate
             `</div>`;
     }
     
-    // Determinar la acción al hacer clic en el título o "Ver todo"
     let verTodoHandler;
     if (viewAllType === 'series') {
         verTodoHandler = `window.showSeriesGrid('${title}')`;
-    } else if (viewAllType === 'category') {
-        // Para carruseles con categoría específica (ej. "Matemáticas")
+    } else if (categoryContext && categoryContext !== 'Todos') {
         verTodoHandler = `window.handleCategoryClick('${categoryContext}')`;
     } else {
-        // Para carruseles aleatorios o genéricos, redirigir a "Todos"
-        verTodoHandler = `window.handleCategoryClick('Todos')`;
+        const itemIds = JSON.stringify(items.map(ep => ep.id));
+        verTodoHandler = `window.showItemsGrid('${title}', ${itemIds})`;
     }
     
     return `<section class="carousel-wrapper relative group/section mb-8 sm:mb-12 ${extraClass}">
@@ -329,45 +327,6 @@ function createSeriesCarousel() {
     </section>`;
 }
 
-// ---------- FUNCIÓN PARA ACTUALIZAR METADATOS (COMPARTIR EN REDES) ----------
-function updateMetaTags(item, tipo = 'episodio') {
-    // Título de la página
-    document.title = item.title || item.titulo_serie || 'App de Episodios';
-
-    // Meta tags Open Graph
-    let metaTitle = document.querySelector('meta[property="og:title"]');
-    if (!metaTitle) {
-        metaTitle = document.createElement('meta');
-        metaTitle.setAttribute('property', 'og:title');
-        document.head.appendChild(metaTitle);
-    }
-    metaTitle.setAttribute('content', item.title || item.titulo_serie || '');
-
-    let metaDesc = document.querySelector('meta[property="og:description"]');
-    if (!metaDesc) {
-        metaDesc = document.createElement('meta');
-        metaDesc.setAttribute('property', 'og:description');
-        document.head.appendChild(metaDesc);
-    }
-    metaDesc.setAttribute('content', item.description || item.descripcion_serie || 'Escucha este contenido en nuestra app');
-
-    let metaImage = document.querySelector('meta[property="og:image"]');
-    if (!metaImage) {
-        metaImage = document.createElement('meta');
-        metaImage.setAttribute('property', 'og:image');
-        document.head.appendChild(metaImage);
-    }
-    metaImage.setAttribute('content', item.coverUrl || item.portada_serie || '');
-
-    let metaUrl = document.querySelector('meta[property="og:url"]');
-    if (!metaUrl) {
-        metaUrl = document.createElement('meta');
-        metaUrl.setAttribute('property', 'og:url');
-        document.head.appendChild(metaUrl);
-    }
-    metaUrl.setAttribute('content', window.location.href.split('#')[0] + '#' + (tipo === 'episodio' ? 'episodio-' + item.id : 'serie-' + item.url_serie));
-}
-
 // ---------- VISTAS DE DETALLE ----------
 export function renderEpisodio(container, episodioId) {
     try {
@@ -376,9 +335,6 @@ export function renderEpisodio(container, episodioId) {
             import('./404.js').then(m => m.render(container));
             return;
         }
-        // Actualizar metadatos para compartir
-        updateMetaTags(ep, 'episodio');
-
         const inPlaylist = userStorage.playlist.has(ep.id);
         const addIcon = inPlaylist ? ICONS.added : ICONS.add;
         const html = `
@@ -402,7 +358,7 @@ export function renderEpisodio(container, episodioId) {
                             <button class="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center hover:bg-white/20 transition" data-episodio-id="${ep.id}" data-action="dl">
                                 <img src="${ep.allowDownload ? ICONS.dl : ICONS.noDl}" class="w-6 h-6 icon-white">
                             </button>
-                            <button class="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center hover:bg-white/20 transition" onclick="window.shareContent('${ep.title}', '${ep.detailUrl}', ${ep.id})">
+                            <button class="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center hover:bg-white/20 transition" onclick="window.shareContent('${ep.title}', '${ep.detailUrl}')">
                                 <img src="${ICONS.share}" class="w-6 h-6 icon-white">
                             </button>
                         </div>
@@ -428,7 +384,7 @@ export function renderEpisodio(container, episodioId) {
                                     <button class="w-14 h-14 rounded-2xl bg-black/40 backdrop-blur border border-white/20 flex items-center justify-center hover:bg-white/20 transition" data-episodio-id="${ep.id}" data-action="dl" title="${ep.allowDownload ? 'Descargar' : 'Descarga no disponible'}">
                                         <img src="${ep.allowDownload ? ICONS.dl : ICONS.noDl}" class="w-6 h-6 icon-white">
                                     </button>
-                                    <button class="w-14 h-14 rounded-2xl bg-black/40 backdrop-blur border border-white/20 flex items-center justify-center hover:bg-white/20 transition" onclick="window.shareContent('${ep.title}', '${ep.detailUrl}', ${ep.id})" title="Compartir">
+                                    <button class="w-14 h-14 rounded-2xl bg-black/40 backdrop-blur border border-white/20 flex items-center justify-center hover:bg-white/20 transition" onclick="window.shareContent('${ep.title}', '${ep.detailUrl}')" title="Compartir">
                                         <img src="${ICONS.share}" class="w-6 h-6 icon-white">
                                     </button>
                                 </div>
@@ -470,9 +426,6 @@ export function renderSerie(container, serieUrl) {
             import('./404.js').then(m => m.render(container));
             return;
         }
-        // Actualizar metadatos para compartir (usamos el primer episodio para imagen, pero mejor usar la serie)
-        updateMetaTags({ title: serie.titulo_serie, description: serie.descripcion_serie, coverUrl: serie.portada_serie }, 'serie');
-
         const episodiosSerie = DATA.filter(e => e.series?.url_serie === serieUrl);
         episodiosSerie.sort((a, b) => new Date(b.date) - new Date(a.date));
         const episodiosHtml = episodiosSerie.map(ep => {
@@ -497,7 +450,7 @@ export function renderSerie(container, serieUrl) {
                             <button class="episode-action-btn w-10 h-10 rounded-xl bg-black/30 backdrop-blur border border-white/10 flex items-center justify-center hover:bg-white/20 transition" data-episodio-id="${ep.id}" data-action="dl" title="${ep.allowDownload ? 'Descargar' : 'Descarga no disponible'}">
                                 <img src="${ep.allowDownload ? ICONS.dl : ICONS.noDl}" class="w-5 h-5 icon-white">
                             </button>
-                            <button class="episode-action-btn w-10 h-10 rounded-xl bg-black/30 backdrop-blur border border-white/10 flex items-center justify-center hover:bg-white/20 transition" onclick="window.shareContent('${ep.title}', '${ep.detailUrl}', ${ep.id})" title="Compartir">
+                            <button class="episode-action-btn w-10 h-10 rounded-xl bg-black/30 backdrop-blur border border-white/10 flex items-center justify-center hover:bg-white/20 transition" onclick="window.shareContent('${ep.title}', '${ep.detailUrl}')" title="Compartir">
                                 <img src="${ICONS.share}" class="w-5 h-5 icon-white">
                             </button>
                             <button class="episode-play-btn w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-[#7b2eda] flex items-center justify-center hover:scale-110 transition ml-auto" data-episodio-id="${ep.id}" data-action="play" title="Reproducir">
@@ -526,7 +479,7 @@ export function renderSerie(container, serieUrl) {
                                 <span class="font-bold">Último episodio</span>
                             </button>
                             ` : ''}
-                            <button class="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center hover:bg-white/20 transition" onclick="window.shareContent('${serie.titulo_serie}', '${serie.url_serie}', null)" title="Compartir serie">
+                            <button class="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center hover:bg-white/20 transition" onclick="window.shareContent('${serie.titulo_serie}', '${serie.url_serie}')" title="Compartir serie">
                                 <img src="${ICONS.share}" class="w-6 h-6 icon-white">
                             </button>
                         </div>
@@ -548,7 +501,7 @@ export function renderSerie(container, serieUrl) {
                                         <span class="font-bold text-lg">Último episodio</span>
                                     </button>
                                     ` : ''}
-                                    <button class="w-14 h-14 rounded-2xl bg-black/40 backdrop-blur border border-white/20 flex items-center justify-center hover:bg-white/20 transition" onclick="window.shareContent('${serie.titulo_serie}', '${serie.url_serie}', null)" title="Compartir serie">
+                                    <button class="w-14 h-14 rounded-2xl bg-black/40 backdrop-blur border border-white/20 flex items-center justify-center hover:bg-white/20 transition" onclick="window.shareContent('${serie.titulo_serie}', '${serie.url_serie}')" title="Compartir serie">
                                         <img src="${ICONS.share}" class="w-6 h-6 icon-white">
                                     </button>
                                 </div>
@@ -613,19 +566,19 @@ export function renderFeed(container) {
     feedView.innerHTML = '';
     
     feedView.innerHTML += createCarousel("Destacados del Día", "vertical",
-        getRandomSafe(15), "Todos", 'items'); // Redirige a "Todos"
+        getRandomSafe(15), "Todos", 'items');
     
     feedView.innerHTML += createCarousel("Nuevos Lanzamientos", "standard",
-        getRandomSafe(15, ep => new Date(ep.date) > new Date(Date.now() - 30*24*60*60*1000)), "Todos", 'items'); // Redirige a "Todos"
+        getRandomSafe(15, ep => new Date(ep.date) > new Date(Date.now() - 30*24*60*60*1000)), "Todos", 'items');
     
     feedView.innerHTML += createCarousel("Series de Video", "expand",
-        getRandomSafe(10, e => e.type === 'video'), "Cine y TV", 'category'); // Redirige a "Cine y TV"
+        getRandomSafe(10, e => e.type === 'video'), "Cine y TV", 'category');
     
     feedView.innerHTML += createCarousel("Top Semanal", "list",
-        getRandomSafe(16), "Todos", 'items'); // Redirige a "Todos"
+        getRandomSafe(16), "Todos", 'items');
     
     feedView.innerHTML += createCarousel("Para Estudiar Profundamente", "double",
-        getRandomSafe(20, e => e.categories.includes("Matemáticas") || e.categories.includes("Física y Astronomía")), "Matemáticas", 'category'); // Redirige a "Matemáticas" (podría ser "Física", pero elegimos Matemáticas como representativa)
+        getRandomSafe(20, e => e.categories.includes("Matemáticas") || e.categories.includes("Física y Astronomía")), "Matemáticas", 'category');
     
     feedView.innerHTML += createCarousel("Matemáticas", "standard",
         getRandomSafe(15, e => e.categories.includes("Matemáticas")), "Matemáticas", 'category');
@@ -647,10 +600,10 @@ export function renderFeed(container) {
         "Otras Ciencias", 'category');
     
     feedView.innerHTML += createCarousel("Imprescindibles del Mes", "list",
-        getRandomSafe(16, e => new Date(e.date) > new Date(Date.now() - 60*24*60*60*1000)), "Todos", 'items'); // Redirige a "Todos"
+        getRandomSafe(16, e => new Date(e.date) > new Date(Date.now() - 60*24*60*60*1000)), "Todos", 'items');
     
     feedView.innerHTML += createCarousel("Podcasts Destacados", "standard",
-        getRandomSafe(15, e => e.type === 'audio'), "Todos", 'items'); // Redirige a "Todos"
+        getRandomSafe(15, e => e.type === 'audio'), "Todos", 'items');
     
     feedView.innerHTML += createCarousel("Charlas y Conferencias", "expand",
         getRandomSafe(10, e => e.type === 'video' && (e.categories.includes("Cine y TV") || e.categories.includes("Documentales"))), "Cine y TV", 'category');
@@ -662,7 +615,7 @@ export function renderFeed(container) {
         ), "Derecho", 'category');
     
     feedView.innerHTML += createCarousel("Mix de Saberes", "double",
-        getRandomSafe(20), "Todos", 'items'); // Redirige a "Todos"
+        getRandomSafe(20), "Todos", 'items');
 }
 
 // ---------- RENDER GRID ----------
@@ -783,49 +736,17 @@ export function renderSeriesGrid(container, title) {
     });
 }
 
-// ---------- FUNCIÓN PARA RENDERIZAR POR CATEGORÍA ----------
-export function renderCategory(container, categoryName) {
-    // Filtrar episodios por categoría
-    const episodiosFiltrados = categoryName === "Todos" 
-        ? DATA 
-        : DATA.filter(ep => ep.categories.includes(categoryName));
-    
-    // Usar renderGrid para mostrar los episodios en cuadrícula
-    renderGrid(container, episodiosFiltrados, categoryName);
-    
-    // Actualizar la URL (hash) para reflejar la categoría
-    window.location.hash = `categoria-${encodeURIComponent(categoryName)}`;
-}
-
 // ---------- FUNCIONES GLOBALES ----------
-window.shareContent = async (title, url, episodioId = null) => {
+window.shareContent = async (title, url) => {
     const fullUrl = window.location.origin + url;
-    
-    // Si se proporciona un episodioId, actualizar metadatos antes de compartir
-    if (episodioId) {
-        const ep = DATA.find(e => e.id === episodioId);
-        if (ep) {
-            updateMetaTags(ep, 'episodio');
-        }
-    }
-    
     if (navigator.share) {
         try {
-            await navigator.share({ 
-                title: title, 
-                text: 'Mira este contenido', 
-                url: fullUrl 
-            });
+            await navigator.share({ title, url: fullUrl });
         } catch (e) {
             console.log('Compartir cancelado');
         }
     } else {
-        // Fallback: copiar al portapapeles
-        navigator.clipboard.writeText(fullUrl).then(() => {
-            showCustomAlert('', 'Enlace copiado al portapapeles');
-        }).catch(() => {
-            prompt('Copia este enlace:', fullUrl);
-        });
+        navigator.clipboard.writeText(fullUrl);
     }
 };
 
@@ -877,27 +798,17 @@ window.handleDl = function(e, episodioId) {
     const ext = ep.type === 'video' ? 'mp4' : 'mp3';
     const filename = `${ep.title.replace(/[^a-z0-9]/gi, '_').substring(0, 50)}.${ext}`;
     
-    // Intentar descargar con fetch (fallback a nueva pestaña si falla)
-    fetch(ep.mediaUrl, { mode: 'cors', cache: 'no-cache' })
-        .then(response => {
-            if (!response.ok) throw new Error('Error en la respuesta');
-            return response.blob();
-        })
-        .then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        })
-        .catch(error => {
-            console.warn('Error en descarga directa, abriendo en nueva pestaña:', error);
-            // Fallback: abrir en nueva pestaña
-            window.open(ep.mediaUrl, '_blank');
-        });
+    try {
+        const a = document.createElement('a');
+        a.href = ep.mediaUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    } catch (error) {
+        console.error('Error en descarga:', error);
+        showCustomAlert(ep.title, 'no se pudo descargar automáticamente.');
+    }
     
     return false;
 };
@@ -938,10 +849,9 @@ window.goToDetail = function(url) {
 };
 
 window.handleCategoryClick = function(category) {
-    const container = document.getElementById('app');
-    if (container) {
-        renderCategory(container, category);
-    }
+    const url = category === 'Todos' ? '/' : `/categoria/${encodeURIComponent(category)}`;
+    window.history.pushState(null, null, url);
+    window.dispatchEvent(new PopStateEvent('popstate'));
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -1015,43 +925,9 @@ document.addEventListener('click', function(e) {
     }
 }, true); // true = fase de captura, se ejecuta antes que cualquier otro listener
 
-// ---------- MANEJADOR DE HASH PARA RENDERIZADO DIRECTO ----------
-function handleHashChange() {
-    const hash = window.location.hash.substring(1); // quita el #
-    const container = document.getElementById('app');
-    if (!container) return;
-
-    if (hash.startsWith('episodio-')) {
-        const id = parseInt(hash.replace('episodio-', ''));
-        renderEpisodio(container, id);
-    } else if (hash.startsWith('serie-')) {
-        const url = hash.replace('serie-', '');
-        renderSerie(container, url);
-    } else if (hash.startsWith('categoria-')) {
-        const category = decodeURIComponent(hash.replace('categoria-', ''));
-        renderCategory(container, category);
-    } else {
-        // Si no hay hash o es otro, mostrar el feed
-        renderFeed(container);
-    }
-}
-
-// Escuchar cambios en el hash
-window.addEventListener('hashchange', handleHashChange);
-
-// También escuchar popstate por si se navega con botones de historial
-window.addEventListener('popstate', handleHashChange);
-
-// Al cargar la página, procesar el hash inicial
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', handleHashChange);
-} else {
-    handleHashChange();
-}
-
 // ---------- ALERTA PERSONALIZADA ----------
 function showCustomAlert(title, message) {
-    const fullMessage = title ? `"${title}" ${message}` : message;
+    const fullMessage = `"${title}" ${message}`;
     
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm';
@@ -1081,4 +957,4 @@ function showCustomAlert(title, message) {
     });
 }
 
-console.log('✅ show.js cargado completamente - versión mejorada con todas las funcionalidades');
+console.log('✅ show.js cargado completamente - versión con captura de eventos');
