@@ -190,21 +190,3 @@ body {
 #content .grid { max-width: 100%; overflow-x: hidden; }
 /* Aquí diseño para player */
 
-/* Estilos para el reproductor flotante */
-
-#floating-player {
-    transition: transform 0.3s ease;
-}
-#floating-player .icon-white {
-    filter: brightness(0) invert(1);
-}
-#player-queue-panel {
-    transition: opacity 0.2s;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
-}
-#player-progress {
-    background: rgba(255,255,255,0.1);
-}
-#player-progress-fill {
-    background: #7b2eda;
-} 
