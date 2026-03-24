@@ -1,2829 +1,942 @@
-// player.js - Reproductor universal flotante (versión única, sin condicionales)
+/**
+ * ═══════════════════════════════════════════════════════════════
+ *  MEDIA PLAYER — YouTube Music + Spotify Style
+ *  Single-file vanilla JS player. No dependencies.
+ *  v1.0
+ * ═══════════════════════════════════════════════════════════════
+ */
+(function () {
+  "use strict";
 
-(function() {
-  if (document.getElementById('playerUniversal')) return; // Evitar duplicados
+  /* ── State ─────────────────────────────────────────────── */
+  const S = {
+    playing: false,
+    expanded: false,
+    mode: "audio",          // "audio" | "video"
+    mediaUrl: "",
+    mediaVideo: "",
+    coverUrl: "",
+    coverInfo: "",
+    title: "",
+    detailUrl: "",
+    author: "",
+    queue: [],
+    queueIndex: -1,
+    text: "",
+    subtitlesUrl: "",
+    bgColor: "#111",
+    allowDownload: false,
+    subtitlesOn: false,
+    subtitlesCues: [],
+    speed: 1,
+    sleepTimer: null,
+    sleepMinutes: 0,
+    panelOpen: null,        // "queue" | "speed" | "share" | "timer" | null
+    duration: 0,
+    currentTime: 0,
+    buffered: 0,
+    volume: 1,
+    muted: false,
+    seekDragging: false,
+  };
 
-  // --- HTML del reproductor (inyectado al body) ---
-  const playerHTML = `
-  <div id="playerUniversal" class="player-universal" style="display: none;">
-    <div id="playerExpanded" class="player-expanded" style="display: none;">
-      <div class="complex1 top-controls">
-        <button id="mediaModeToggle" class="media-mode-toggle">
-          <span class="mode-left">Audio</span>
-          <span class="mode-right">Video</span>
-        </button>
-        <button id="minimizeBtn" class="minimize-btn">
-          <img src="https://marca1.odoo.com/web/image/490-b15e1d52/minimizar.svg" alt="Minimize" loading="lazy">
-        </button>
-      </div>
-      <div class="content-wrapper">
-        <div class="complex2">
-          <div id="mediaContainer" class="media-container">
-            <video id="mediaElement" style="display: none;" controlsList="nodownload nofullscreen noremoteplayback" disablePictureInPicture preload="metadata"></video>
-            <img id="mediaCover" style="display: block;" src="" loading="lazy">
-            <div class="overlay-gradient" id="overlayGradient">
-              <div class="media-controls-center">
-                <button id="playPauseMedia" class="control-btn">
-                  <img id="playPauseIconMedia" src="https://nikichitonjesus.odoo.com/web/image/1140-f876320c/play.svg" alt="Play" loading="lazy">
-                </button>
-              </div>
-              <div class="media-controls-bottom">
-                <button id="volumeBtn" class="volume-btn">
-                  <img id="volumeIcon" src="https://marca1.odoo.com/web/image/505-b00aeb8e/volumen.svg" alt="Volume" loading="lazy">
-                </button>
-                <button id="fullscreenBtn" class="fullscreen-btn">
-                  <img src="https://marca1.odoo.com/web/image/499-48202209/full.svg" alt="Fullscreen" loading="lazy">
-                </button>
-              </div>
-            </div>
-            <div class="seek-indicator-left" id="seekIndicatorLeft">
-              <span id="seekSecondsLeft">15s</span>
-              <img src="https://marca1.odoo.com/web/image/506-1607e7a0/retroceder%2015.svg" alt="Rewind" loading="lazy">
-            </div>
-            <div class="seek-indicator-right" id="seekIndicatorRight">
-              <img src="https://marca1.odoo.com/web/image/504-db1a8f7a/avanzar%2015s.svg" alt="Forward" loading="lazy">
-              <span id="seekSecondsRight">15s</span>
-            </div>
-            <div id="fullscreenControls" class="fullscreen-controls" style="display: none;">
-              <div class="fullscreen-title" id="fullscreenTitle"></div>
-              <div class="fullscreen-center-controls">
-                <button id="previousFullscreen" class="control-btn">
-                  <img src="https://nikichitonjesus.odoo.com/web/image/1072-2fba0e95/ant.webp" alt="Previous" loading="lazy">
-                </button>
-                <button id="rewindFullscreen" class="control-btn">
-                  <img src="https://marca1.odoo.com/web/image/503-ed98d111/retroceder15.svg" alt="Rewind" loading="lazy">
-                </button>
-                <button id="playPauseFullscreen" class="control-btn">
-                  <img id="playPauseIconFullscreen" src="https://nikichitonjesus.odoo.com/web/image/1140-f876320c/play.svg" alt="Play" loading="lazy">
-                </button>
-                <button id="forwardFullscreen" class="control-btn">
-                  <img src="https://marca1.odoo.com/web/image/507-089c3773/avanzar15.svg" alt="Forward" loading="lazy">
-                </button>
-                <button id="nextFullscreen" class="control-btn">
-                  <img src="https://nikichitonjesus.odoo.com/web/image/1068-bc302591/sig.webp" alt="Next" loading="lazy">
-                </button>
-              </div>
-              <div class="fullscreen-bottom-bar">
-                <span id="currentTimeFullscreen">00:00</span>
-                <div class="video-progress-container-fullscreen" id="progressContainerFullscreen">
-                  <div class="progress-bar-fullscreen" id="progressBarFullscreen"></div>
-                </div>
-                <span id="durationFullscreen">00:00</span>
-                <button id="volumeFullscreen" class="volume-btn">
-                  <img id="volumeIconFullscreen" src="https://marca1.odoo.com/web/image/505-b00aeb8e/volumen.svg" alt="Volume" loading="lazy">
-                </button>
-                <button id="exitFullscreenBtn" class="fullscreen-btn">
-                  <img src="https://marca1.odoo.com/web/image/501-7b0e44ac/Exitfull.svg" alt="Exit Fullscreen" loading="lazy">
-                </button>
-              </div>
-            </div>
-            <div id="muteIndicator" class="mute-indicator" style="display: none;">Silenciado</div>
-          </div>
-        </div>
-        <div class="complex3">
-          <div class="episode-info" id="episodeInfo">
-            <div class="left-section">
-              <img src="" alt="Portada" loading="lazy">
-            </div>
-            <div class="center-section">
-              <span id="episodeTitle"></span>
-              <span class="author" id="episodeAuthor"></span>
-            </div>
-            <div class="right-section">
-              <button id="addToPlaylistBtn">
-                <img id="addToPlaylistIcon" src="https://nikichitonjesus.odoo.com/web/image/772-ea85aa4b/a%C3%B1adir%20a.png" alt="Add to Playlist" loading="lazy">
-              </button>
-            </div>
-          </div>
-          <div class="video-progress-container-expanded" id="progressContainerExpanded">
-            <div class="progress-bar-expanded" id="progressBarExpanded">
-              <div class="progress-knob-expanded"></div>
-            </div>
-          </div>
-          <div class="time-info">
-            <span id="currentTimeExpanded">00:00</span>
-            <span id="durationExpanded">00:00</span>
-          </div>
-          <div class="controls">
-            <div class="speed-container">
-              <img id="speedIcon" src="https://nikichitonjesus.odoo.com/web/image/1113-9a93ad3a/speed.png" alt="Velocidad" loading="lazy">
-            </div>
-            <button id="previousExpanded">
-              <img src="https://marca1.odoo.com/web/image/502-e1f7bc1b/ant.svg" alt="Previous" loading="lazy">
-            </button>
-            <button id="rewindExpanded">
-              <img src="https://marca1.odoo.com/web/image/503-ed98d111/retroceder15.svg" alt="Rewind" loading="lazy">
-            </button>
-            <button id="playPauseExpanded">
-              <img id="playPauseIconExpanded" src="https://nikichitonjesus.odoo.com/web/image/984-ba35a699/play.webp" alt="Play" loading="lazy">
-            </button>
-            <button id="forwardExpanded">
-              <img src="https://marca1.odoo.com/web/image/507-089c3773/avanzar15.svg" alt="Forward" loading="lazy">
-            </button>
-            <button id="nextExpanded">
-              <img src="https://marca1.odoo.com/web/image/500-1957f422/sig.svg" alt="Next" loading="lazy">
-            </button>
-            <div class="timer-container">
-              <img id="timerIcon" src="https://marca1.odoo.com/web/image/512-4489ad50/tempo.svg" alt="Timer" loading="lazy">
-            </div>
-          </div>
-          <div class="action-buttons-container">
-            <div class="action-buttons" id="actionButtons">
-              <button id="likesBtn" class="action-btn">
-                <img id="likesIcon" src="https://marca1.odoo.com/web/image/511-0363beb5/meg.svg" alt="Me gusta" loading="lazy">
-                <span>Me gusta</span>
-              </button>
-              <button id="downloadBtn" class="action-btn">
-                <img id="downloadIcon" src="https://nikichitonjesus.odoo.com/web/image/624-ec376d7f/descargar.png" alt="Download" loading="lazy">
-                <span>Descargar</span>
-              </button>
-              <button id="shareBtn" class="action-btn">
-                <img src="https://nikichitonjesus.odoo.com/web/image/585-036b7961/cpmartir.png" alt="Share" loading="lazy">
-                <span>Compartir</span>
-              </button>
-              <button id="repeatBtn" class="action-btn">
-                <img src="https://nikichitonjesus.odoo.com/web/image/771-e8de83ec/repetir-.png" alt="Repeat" loading="lazy">
-                <span>Repetir</span>
-              </button>
-              <button id="colaBtn" class="action-btn">
-                <img src="https://marca1.odoo.com/web/image/515-2e6082a5/cola.svg" alt="Cola" loading="lazy">
-                <span>Cola</span>
-              </button>
-              <button id="detallesBtn" class="action-btn">
-                <img src="https://nikichitonjesus.odoo.com/web/image/995-7301139c/trasncrip.webp" alt="Detalles" loading="lazy">
-                <span>Detalles</span>
-              </button>
-              <button id="bibliotecaBtn" class="action-btn">
-                <img src="https://marca1.odoo.com/web/image/517-7bde9b69/Archive.svg" alt="Biblioteca" loading="lazy">
-                <span>Biblioteca</span>
-              </button>
-            </div>
-          </div>
-          <div class="program-container">
-            <button id="programBtn" class="full-width-btn">
-              <img src="https://nikichitonjes-home.odoo.com/web/image/478-0e3df8d3/reanudar.gif" alt="Program" loading="lazy">
-              <span>Programa del Día</span>
-            </button>
-          </div>
-          <div class="tabs-text">
-            <a id="linkCola"><b><span style="color: white;">A continuación</span></b></a>
-            <a id="linkDetalles"><b><span style="color: white;">Detalles</span></b></a>
-            <a id="linkBiblioteca"><b><span style="color: white;">Biblioteca</span></b></a>
-          </div>
-        </div>
-      </div>
-      <div class="panel-container" id="panelContainer" style="display: none;">
-        <div class="panel-header">
-          <div class="tabs">
-            <a id="tabCola" class="tab-content active">Cola</a>
-            <a id="tabDetalles" class="tab-content">Detalles</a>
-            <a id="tabBiblioteca" class="tab-content">Biblioteca</a>
-            <a id="tabVelocidad" class="tab-speed">Velocidad</a>
-            <a id="tabTemporizador" class="tab-timer">Temporizador</a>
-          </div>
-          <div class="panel-controls">
-            <button id="togglePanelHeightBtn">
-              <img src="https://marca1.odoo.com/web/image/513-e0bcd17f/maz.svg" alt="Ampliar/Minimizar" loading="lazy">
-            </button>
-            <button id="closePanelBtn">
-              <img src="https://marca1.odoo.com/web/image/518-a62b303e/cierra.svg" alt="Cerrar" loading="lazy">
-            </button>
-          </div>
-        </div>
-        <div class="panel-content">
-          <div id="colaContent" class="panel-section active">
-            <div class="next-items" id="nextItems"></div>
-            <div class="separator" id="recomendadosSeparator" style="display: none;">
-              <hr>
-              <h4>Recomendados</h4>
-            </div>
-            <div class="recomendados-items" id="recomendadosItems"></div>
-          </div>
-          <div id="detallesContent" class="panel-section">
-            <div class="text-content" id="textContent"></div>
-          </div>
-          <div id="bibliotecaContent" class="panel-section">
-            <div class="likes-section">
-              <h4>Tus me gusta</h4>
-              <button id="viewAllLikes">Ver todo</button>
-              <div id="likesView" class="likes-view carousel">
-                <div class="likes-carousel" id="likesCarousel"></div>
-              </div>
-            </div>
-            <div class="playlist-section">
-              <h4>Tu lista</h4>
-              <div class="playlist-items" id="playlistItems"></div>
-              <button id="playUserPlaylistBtn">Reproducir esta lista</button>
-            </div>
-          </div>
-          <div id="velocidadContent" class="panel-section">
-            <div class="options-panel">
-              <span id="currentSpeed">1x</span>
-              <input type="range" id="speedSlider" min="0.25" max="2" step="0.25" value="1">
-              <div class="speed-labels">
-                <span>0.25x</span><span>0.5x</span><span>0.75x</span><span>1x</span><span>1.25x</span><span>1.5x</span><span>1.75x</span><span>2x</span>
-              </div>
-            </div>
-          </div>
-          <div id="temporizadorContent" class="panel-section">
-            <div id="timerCountdown" style="display: none;">
-              <span id="countdownDisplay"></span>
-              <button id="deactivateTimer">Desactivar temporizador</button>
-            </div>
-            <div id="timerOptions" class="options-panel timer-options">
-              <button data-value="5">5 min</button>
-              <button data-value="10">10 min</button>
-              <button data-value="15">15 min</button>
-              <button data-value="30">30 min</button>
-              <button data-value="45">45 min</button>
-              <button data-value="60">1 hora</button>
-              <button data-value="end">Fin del episodio</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div id="playerMinimized" class="player-minimized">
-      <div class="video-progress-container-minimized" id="progressContainerMinimized">
-        <div class="progress-bar-minimized" id="progressBarMinimized">
-          <div class="progress-knob-minimized"></div>
-        </div>
-      </div>
-      <div class="minimized-content">
-        <div class="minimized-cover">
-          <img id="minimizedCover" src="" alt="Portada" loading="lazy">
-        </div>
-        <div class="minimized-title-container">
-          <span id="episodeTitleMinimized" class="minimized-title"></span>
-        </div>
-        <div class="minimized-controls">
-          <button id="rewindMinimized">
-            <img src="https://marca1.odoo.com/web/image/503-ed98d111/retroceder15.svg" alt="Rewind" loading="lazy">
-          </button>
-          <button id="playPauseMinimized">
-            <img id="playPauseIconMinimized" src="https://marca1.odoo.com/web/image/508-f876320c/play.svg" alt="Play" loading="lazy">
-          </button>
-          <button id="forwardMinimized">
-            <img src="https://marca1.odoo.com/web/image/507-089c3773/avanzar15.svg" alt="Fast Forward" loading="lazy">
-          </button>
-          <button id="expandBtn">
-            <img src="https://marca1.odoo.com/web/image/516-3ecd56b1/full-2.svg" alt="Expand" loading="lazy">
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+  /* ── Helpers ───────────────────────────────────────────── */
+  const $ = (sel, ctx) => (ctx || document).querySelector(sel);
+  const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)];
+  const ce = (tag, cls, html) => {
+    const el = document.createElement(tag);
+    if (cls) el.className = cls;
+    if (html) el.innerHTML = html;
+    return el;
+  };
+  const fmt = (s) => {
+    if (!s || !isFinite(s)) return "0:00";
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return m + ":" + (sec < 10 ? "0" : "") + sec;
+  };
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const hexToRgb = (h) => {
+    h = h.replace("#", "");
+    if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    return [parseInt(h.substr(0,2),16), parseInt(h.substr(2,2),16), parseInt(h.substr(4,2),16)];
+  };
+  const darken = (hex, f) => {
+    const [r,g,b] = hexToRgb(hex);
+    return `rgb(${Math.round(r*f)},${Math.round(g*f)},${Math.round(b*f)})`;
+  };
+  const luminance = (hex) => {
+    const [r,g,b] = hexToRgb(hex);
+    return (0.299*r + 0.587*g + 0.114*b) / 255;
+  };
+  const textColor = (hex) => luminance(hex) > 0.55 ? "#111" : "#fff";
+
+  /* ── Icons (inline SVG) ────────────────────────────────── */
+  const ICO = {
+    play: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`,
+    pause: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,
+    next: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>`,
+    prev: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>`,
+    vol: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 8.14v7.72A4.5 4.5 0 0016.5 12zM14 3.23v2.06a6.51 6.51 0 010 13.42v2.06A8.5 8.5 0 0014 3.23z"/></svg>`,
+    volMute: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12A4.5 4.5 0 0014 8.14v2.12l2.45 2.45c.03-.24.05-.48.05-.71zm2.5 0a6.45 6.45 0 01-.57 2.65l1.46 1.46A8.43 8.43 0 0021 12a8.5 8.5 0 00-7-8.77v2.06A6.51 6.51 0 0119 12zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.46 8.46 0 003.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4l-1.88 1.88L12 7.76V4z"/></svg>`,
+    expand: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/></svg>`,
+    collapse: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>`,
+    queue: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18A3 3 0 1020 17V8h3V6h-6z"/></svg>`,
+    speed: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.38 8.57l-1.23 1.85a8 8 0 01-.22 7.58H5.07A8 8 0 0115.58 6.85l1.85-1.23A10 10 0 003.35 19a2 2 0 001.72 1h13.85a2 2 0 001.74-1 10 10 0 00-.27-10.44z"/><path d="M10.59 15.41a2 2 0 002.83 0l5.66-8.49-8.49 5.66a2 2 0 000 2.83z"/></svg>`,
+    timer: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42A10.93 10.93 0 0012 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10c0-2.12-.66-4.08-1.78-5.7l-.19.09zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/></svg>`,
+    share: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08a2.91 2.91 0 00-1.96.77L8.91 12.7A3.25 3.25 0 009 12c0-.24-.03-.47-.09-.7l7.05-4.11A2.93 2.93 0 0018 7.92a3 3 0 10-3-3c0 .24.04.47.09.7L8.04 9.74A3 3 0 006 9a3 3 0 000 6c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.92 2.92 2.92A2.92 2.92 0 0021 19a2.92 2.92 0 00-3-2.92z"/></svg>`,
+    subtitle: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zM4 18V6h16v12H4zm2-2h2v-2H6v2zm0-4h2v-2H6v2zm4 4h8v-2h-8v2zm0-4h8v-2h-8v2z"/></svg>`,
+    close: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`,
+    download: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>`,
+    videoIcon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 4v-11l-4 4z"/></svg>`,
+    audioIcon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55A4 4 0 1014 17V7h4V3h-6z"/></svg>`,
+    repeat: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>`,
+    shuffle: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>`,
+  };
+  const icon = (name, size) => `<span class="mp-ico" style="width:${size||20}px;height:${size||20}px">${ICO[name]||""}</span>`;
+
+  /* ── Build DOM ─────────────────────────────────────────── */
+  const CSS = `
+  /* Reset scoped */
+  #mp-root,.mp-root *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  #mp-root{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;position:fixed;bottom:0;left:0;right:0;z-index:999999;pointer-events:none}
+  #mp-root *{pointer-events:auto}
+  .mp-ico{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+  .mp-ico svg{width:100%;height:100%}
+
+  /* ── Mini bar ────────── */
+  .mp-mini{display:none;height:64px;background:#181818;color:#fff;align-items:center;padding:0 12px;gap:10px;position:relative;border-top:1px solid rgba(255,255,255,.08);transition:background .4s}
+  .mp-mini.visible{display:flex}
+  .mp-mini-cover{width:44px;height:44px;border-radius:6px;object-fit:cover;cursor:pointer;flex-shrink:0}
+  .mp-mini-info{flex:1;min-width:0;cursor:pointer}
+  .mp-mini-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mp-mini-author{font-size:11px;opacity:.65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mp-mini-btn{background:none;border:none;color:inherit;cursor:pointer;padding:6px;border-radius:50%;transition:background .15s}
+  .mp-mini-btn:hover{background:rgba(255,255,255,.12)}
+  .mp-mini-btn:active{transform:scale(.92)}
+  .mp-mini-progress{position:absolute;top:-2px;left:0;right:0;height:3px;background:rgba(255,255,255,.1);cursor:pointer}
+  .mp-mini-progress-fill{height:100%;background:#fff;border-radius:0 2px 2px 0;transition:width .25s linear}
+  .mp-mini-progress-buf{position:absolute;top:0;left:0;height:100%;background:rgba(255,255,255,.15);pointer-events:none}
+
+  /* ── Expanded view ───── */
+  .mp-expanded{position:fixed;bottom:64px;left:0;right:0;top:0;background:#111;color:#fff;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .38s cubic-bezier(.16,1,.3,1),background .5s;overflow:hidden;z-index:999998}
+  .mp-expanded.open{transform:translateY(0)}
+
+  /* Top bar */
+  .mp-exp-top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;flex-shrink:0;position:relative;z-index:3}
+  .mp-exp-top-btn{background:none;border:none;color:inherit;cursor:pointer;padding:8px;border-radius:50%;transition:background .15s}
+  .mp-exp-top-btn:hover{background:rgba(255,255,255,.12)}
+  .mp-exp-top-btn:active{transform:scale(.92)}
+
+  /* Content area */
+  .mp-exp-content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:0 24px}
+  .mp-exp-cover{max-width:340px;max-height:340px;width:80vw;height:80vw;border-radius:12px;object-fit:cover;box-shadow:0 8px 40px rgba(0,0,0,.5);transition:opacity .3s}
+  .mp-exp-video{width:100%;height:100%;object-fit:contain;border-radius:0;background:#000}
+  .mp-exp-subs{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);text-align:center;font-size:clamp(18px,4vw,32px);font-weight:700;line-height:1.4;max-width:80%;text-shadow:0 2px 12px rgba(0,0,0,.7);pointer-events:none;transition:opacity .3s}
+  .mp-exp-subs.audio-mode{position:relative;bottom:auto;left:auto;transform:none;max-width:90%;padding:32px 24px;font-size:clamp(22px,5vw,40px)}
+  .mp-exp-video-subs{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);padding:6px 16px;border-radius:6px;font-size:clamp(14px,2.5vw,22px);text-align:center;max-width:80%;pointer-events:none}
+
+  /* Controls */
+  .mp-exp-controls{flex-shrink:0;padding:16px 24px 20px;position:relative;z-index:3}
+  .mp-exp-info{text-align:center;margin-bottom:12px}
+  .mp-exp-title{font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mp-exp-author{font-size:13px;opacity:.65;margin-top:2px}
+  .mp-exp-seek{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .mp-exp-seek-time{font-size:11px;opacity:.6;min-width:36px;font-variant-numeric:tabular-nums}
+  .mp-exp-seek-bar{flex:1;height:4px;background:rgba(255,255,255,.15);border-radius:2px;position:relative;cursor:pointer}
+  .mp-exp-seek-buf{position:absolute;top:0;left:0;height:100%;background:rgba(255,255,255,.15);border-radius:2px;pointer-events:none}
+  .mp-exp-seek-fill{position:absolute;top:0;left:0;height:100%;background:#fff;border-radius:2px;pointer-events:none}
+  .mp-exp-seek-thumb{position:absolute;top:50%;width:14px;height:14px;background:#fff;border-radius:50%;transform:translate(-50%,-50%);opacity:0;transition:opacity .15s;pointer-events:none}
+  .mp-exp-seek-bar:hover .mp-exp-seek-thumb{opacity:1}
+  .mp-exp-btns{display:flex;align-items:center;justify-content:center;gap:16px}
+  .mp-ctrl-btn{background:none;border:none;color:inherit;cursor:pointer;padding:8px;border-radius:50%;transition:background .15s,transform .1s}
+  .mp-ctrl-btn:hover{background:rgba(255,255,255,.1)}
+  .mp-ctrl-btn:active{transform:scale(.92)}
+  .mp-ctrl-btn.active{color:#1db954}
+  .mp-play-btn{width:52px;height:52px;background:#fff!important;color:#000!important;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .mp-play-btn:hover{transform:scale(1.06)}
+
+  /* Secondary controls */
+  .mp-exp-secondary{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+  .mp-sec-btn{background:none;border:none;color:inherit;cursor:pointer;padding:6px;border-radius:50%;opacity:.65;transition:opacity .15s}
+  .mp-sec-btn:hover{opacity:1}
+  .mp-sec-btn.active{opacity:1;color:#1db954}
+
+  /* Volume */
+  .mp-vol-wrap{display:flex;align-items:center;gap:6px}
+  .mp-vol-bar{width:80px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;position:relative;cursor:pointer}
+  .mp-vol-fill{height:100%;background:#fff;border-radius:2px;pointer-events:none}
+
+  /* ── Panels (overlays) ── */
+  .mp-panel{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:5;display:none;flex-direction:column;overflow:auto;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);animation:mp-fadeIn .25s ease}
+  .mp-panel.open{display:flex}
+  @keyframes mp-fadeIn{from{opacity:0}to{opacity:1}}
+  .mp-panel-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0}
+  .mp-panel-header h3{font-size:16px;font-weight:700}
+  .mp-panel-close{background:none;border:none;color:#fff;cursor:pointer;padding:6px}
+  .mp-panel-body{flex:1;overflow:auto;padding:12px 20px}
+
+  /* Queue items */
+  .mp-queue-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;transition:background .15s;border-radius:6px;padding:10px 8px}
+  .mp-queue-item:hover{background:rgba(255,255,255,.06)}
+  .mp-queue-item.active{background:rgba(255,255,255,.1)}
+  .mp-queue-img{width:44px;height:44px;border-radius:4px;object-fit:cover;flex-shrink:0}
+  .mp-queue-info{flex:1;min-width:0}
+  .mp-queue-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mp-queue-author{font-size:12px;opacity:.5}
+
+  /* Speed */
+  .mp-speed-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 0}
+  .mp-speed-opt{background:rgba(255,255,255,.08);border:2px solid transparent;border-radius:10px;padding:12px 8px;text-align:center;font-size:15px;font-weight:600;cursor:pointer;transition:border .15s,background .15s}
+  .mp-speed-opt:hover{background:rgba(255,255,255,.12)}
+  .mp-speed-opt.active{border-color:#1db954;background:rgba(29,185,84,.15)}
+
+  /* Timer */
+  .mp-timer-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 0}
+  .mp-timer-opt{background:rgba(255,255,255,.08);border:2px solid transparent;border-radius:10px;padding:14px 8px;text-align:center;font-size:14px;font-weight:600;cursor:pointer;transition:border .15s}
+  .mp-timer-opt:hover{background:rgba(255,255,255,.12)}
+  .mp-timer-opt.active{border-color:#1db954;background:rgba(29,185,84,.15)}
+  .mp-timer-status{text-align:center;padding:12px;font-size:13px;opacity:.6}
+
+  /* Share */
+  .mp-share-grid{display:flex;flex-wrap:wrap;gap:12px;padding:12px 0;justify-content:center}
+  .mp-share-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 12px;border-radius:12px;background:rgba(255,255,255,.06);border:none;color:#fff;cursor:pointer;min-width:80px;font-size:12px;transition:background .15s}
+  .mp-share-btn:hover{background:rgba(255,255,255,.12)}
+  .mp-share-btn svg{width:28px;height:28px}
+
+  /* BG gradient */
+  .mp-bg-gradient{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;transition:opacity .6s}
+
+  /* Mode switch */
+  .mp-mode-switch{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.1);border-radius:20px;padding:3px}
+  .mp-mode-opt{background:none;border:none;color:#fff;padding:6px 14px;border-radius:18px;font-size:12px;font-weight:600;cursor:pointer;opacity:.6;transition:all .2s;display:flex;align-items:center;gap:4px}
+  .mp-mode-opt.active{background:rgba(255,255,255,.2);opacity:1}
+
+  /* Responsive */
+  @media(max-width:480px){
+    .mp-exp-cover{max-width:260px;max-height:260px}
+    .mp-exp-controls{padding:12px 16px 16px}
+    .mp-exp-btns{gap:10px}
+    .mp-vol-wrap{display:none}
+    .mp-speed-grid{grid-template-columns:repeat(3,1fr)}
+  }
+  @media(min-width:769px){
+    .mp-exp-content{flex-direction:row;padding:24px 48px;gap:40px}
+    .mp-exp-cover{max-width:400px;max-height:400px;width:40vw;height:40vw}
+    .mp-exp-controls{max-width:600px;margin:0 auto;width:100%}
+  }
   `;
 
-  // Insertar el reproductor en el body
-  document.body.insertAdjacentHTML('beforeend', playerHTML);
+  function buildUI() {
+    // Style
+    const style = document.createElement("style");
+    style.textContent = CSS;
+    document.head.appendChild(style);
 
-  // --- Variables globales y referencias ---
-  let specialPlayer = null;
-  let playlist = JSON.parse(localStorage.getItem('playlist')) || [];
-  let likes = JSON.parse(localStorage.getItem('likes')) || [];
-  let historyList = JSON.parse(localStorage.getItem('history')) || [];
-  let currentIndex = -1;
-  let nextList = [];
-  let recomendados = window.RECOMENDADOS || [];
-  let cachedRecomendados = [];
-  let episodeText = '';
-  let episodeAuthor = 'Roberto';
-  let activeList = 'next';
-  let userPlaylistAutoPlay = false;
-  let timerValue = 0;
-  let timerId = null;
-  let timerCountdownInterval = null;
-  let tapCount = 0;
-  let tapSide = '';
-  let lastTapTime = 0;
-  let tapTimeout = null;
-  let isAudioMode = true;
-  let isFullscreenMode = false;
-  let repeatMode = 0;
-  let currentEpisodeId = null;
-  let showControls = false;
-  let isAutoMuted = false;
-  let isUserMuted = false;
-  let likesViewMode = 'carousel';
-  let playerBgColor = '#6a8caf'; // Color por defecto (azul marino pálido)
+    // Root
+    const root = ce("div");
+    root.id = "mp-root";
+    root.innerHTML = `
+    <!-- EXPANDED -->
+    <div class="mp-expanded" id="mp-exp">
+      <div class="mp-bg-gradient" id="mp-bg"></div>
+      <div class="mp-exp-top" style="position:relative;z-index:4">
+        <button class="mp-exp-top-btn" id="mp-collapse">${icon("collapse",24)}</button>
+        <div class="mp-mode-switch" id="mp-mode-switch" style="display:none">
+          <button class="mp-mode-opt active" data-mode="audio">${icon("audioIcon",16)} Audio</button>
+          <button class="mp-mode-opt" data-mode="video">${icon("videoIcon",16)} Video</button>
+        </div>
+        <div style="display:flex;gap:4px">
+          <button class="mp-exp-top-btn" id="mp-btn-queue" title="Cola">${icon("queue",22)}</button>
+          <button class="mp-exp-top-btn" id="mp-btn-speed" title="Velocidad">${icon("speed",22)}</button>
+          <button class="mp-exp-top-btn" id="mp-btn-timer" title="Temporizador">${icon("timer",22)}</button>
+          <button class="mp-exp-top-btn" id="mp-btn-share" title="Compartir">${icon("share",22)}</button>
+          <button class="mp-exp-top-btn" id="mp-btn-dl" title="Descargar" style="display:none">${icon("download",22)}</button>
+        </div>
+      </div>
+      <div class="mp-exp-content" id="mp-exp-content" style="position:relative;z-index:2">
+        <img class="mp-exp-cover" id="mp-exp-cover" src="" alt="cover" />
+        <video class="mp-exp-video" id="mp-exp-video" style="display:none" playsinline></video>
+        <div class="mp-exp-subs" id="mp-exp-subs" style="display:none"></div>
+        <div class="mp-exp-video-subs" id="mp-exp-vsubs" style="display:none"></div>
+      </div>
+      <div class="mp-exp-controls" style="position:relative;z-index:3">
+        <div class="mp-exp-info"><div class="mp-exp-title" id="mp-exp-title"></div><div class="mp-exp-author" id="mp-exp-author"></div></div>
+        <div class="mp-exp-seek">
+          <span class="mp-exp-seek-time" id="mp-cur-time">0:00</span>
+          <div class="mp-exp-seek-bar" id="mp-seek">
+            <div class="mp-exp-seek-buf" id="mp-seek-buf"></div>
+            <div class="mp-exp-seek-fill" id="mp-seek-fill"></div>
+            <div class="mp-exp-seek-thumb" id="mp-seek-thumb"></div>
+          </div>
+          <span class="mp-exp-seek-time" id="mp-dur-time">0:00</span>
+        </div>
+        <div class="mp-exp-btns">
+          <button class="mp-ctrl-btn" id="mp-shuf" title="Aleatorio">${icon("shuffle",22)}</button>
+          <button class="mp-ctrl-btn" id="mp-prev" title="Anterior">${icon("prev",28)}</button>
+          <button class="mp-ctrl-btn mp-play-btn" id="mp-play">${icon("play",28)}</button>
+          <button class="mp-ctrl-btn" id="mp-next" title="Siguiente">${icon("next",28)}</button>
+          <button class="mp-ctrl-btn" id="mp-rep" title="Repetir">${icon("repeat",22)}</button>
+        </div>
+        <div class="mp-exp-secondary">
+          <div style="display:flex;gap:4px">
+            <button class="mp-sec-btn" id="mp-sub-btn" title="Subtítulos">${icon("subtitle",20)}</button>
+          </div>
+          <div class="mp-vol-wrap">
+            <button class="mp-sec-btn" id="mp-vol-btn">${icon("vol",20)}</button>
+            <div class="mp-vol-bar" id="mp-vol-bar"><div class="mp-vol-fill" id="mp-vol-fill" style="width:100%"></div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Panels -->
+      <div class="mp-panel" id="mp-panel-queue"><div class="mp-panel-header"><h3>A continuación</h3><button class="mp-panel-close" data-panel="queue">${icon("close",22)}</button></div><div class="mp-panel-body" id="mp-queue-list"></div></div>
+      <div class="mp-panel" id="mp-panel-speed"><div class="mp-panel-header"><h3>Velocidad</h3><button class="mp-panel-close" data-panel="speed">${icon("close",22)}</button></div><div class="mp-panel-body" id="mp-speed-body"></div></div>
+      <div class="mp-panel" id="mp-panel-timer"><div class="mp-panel-header"><h3>Temporizador</h3><button class="mp-panel-close" data-panel="timer">${icon("close",22)}</button></div><div class="mp-panel-body" id="mp-timer-body"></div></div>
+      <div class="mp-panel" id="mp-panel-share"><div class="mp-panel-header"><h3>Compartir</h3><button class="mp-panel-close" data-panel="share">${icon("close",22)}</button></div><div class="mp-panel-body" id="mp-share-body"></div></div>
+    </div>
 
-  // Elementos del DOM
-  const playerUniversal = document.getElementById('playerUniversal');
-  const playerExpanded = document.getElementById('playerExpanded');
-  const playerMinimized = document.getElementById('playerMinimized');
-  let mediaElement = document.getElementById('mediaElement');
-  const mediaCover = document.getElementById('mediaCover');
-  const mediaContainer = document.getElementById('mediaContainer');
-  const minimizeBtn = document.getElementById('minimizeBtn');
-  const mediaModeToggle = document.getElementById('mediaModeToggle');
-  const fullscreenBtn = document.getElementById('fullscreenBtn');
-  const volumeBtn = document.getElementById('volumeBtn');
-  const volumeIcon = document.getElementById('volumeIcon');
-  const expandBtn = document.getElementById('expandBtn');
-  const episodeInfo = document.getElementById('episodeInfo');
-  const episodeTitle = document.getElementById('episodeTitle');
-  const episodeTitleMinimized = document.getElementById('episodeTitleMinimized');
-  const episodeAuthorElem = document.getElementById('episodeAuthor');
-  const minimizedCover = document.getElementById('minimizedCover');
-  const progressContainerExpanded = document.getElementById('progressContainerExpanded');
-  const progressBarExpanded = document.getElementById('progressBarExpanded');
-  const progressContainerMinimized = document.getElementById('progressContainerMinimized');
-  const progressBarMinimized = document.getElementById('progressBarMinimized');
-  const currentTimeExpanded = document.getElementById('currentTimeExpanded');
-  const durationExpanded = document.getElementById('durationExpanded');
-  const playPauseExpanded = document.getElementById('playPauseExpanded');
-  const playPauseIconExpanded = document.getElementById('playPauseIconExpanded');
-  const playPauseMinimized = document.getElementById('playPauseMinimized');
-  const playPauseIconMinimized = document.getElementById('playPauseIconMinimized');
-  const rewindExpanded = document.getElementById('rewindExpanded');
-  const forwardExpanded = document.getElementById('forwardExpanded');
-  const previousExpanded = document.getElementById('previousExpanded');
-  const nextExpanded = document.getElementById('nextExpanded');
-  const rewindMinimized = document.getElementById('rewindMinimized');
-  const forwardMinimized = document.getElementById('forwardMinimized');
-  const speedIcon = document.getElementById('speedIcon');
-  const speedSlider = document.getElementById('speedSlider');
-  const currentSpeed = document.getElementById('currentSpeed');
-  const timerIcon = document.getElementById('timerIcon');
-  const timerOptions = document.getElementById('timerOptions');
-  const timerCountdown = document.getElementById('timerCountdown');
-  const countdownDisplay = document.getElementById('countdownDisplay');
-  const deactivateTimer = document.getElementById('deactivateTimer');
-  const downloadBtn = document.getElementById('downloadBtn');
-  const downloadIcon = document.getElementById('downloadIcon');
-  const shareBtn = document.getElementById('shareBtn');
-  const programBtn = document.getElementById('programBtn');
-  const repeatBtn = document.getElementById('repeatBtn');
-  const addToPlaylistBtn = document.getElementById('addToPlaylistBtn');
-  const addToPlaylistIcon = document.getElementById('addToPlaylistIcon');
-  const colaBtn = document.getElementById('colaBtn');
-  const detallesBtn = document.getElementById('detallesBtn');
-  const bibliotecaBtn = document.getElementById('bibliotecaBtn');
-  const likesBtn = document.getElementById('likesBtn');
-  const likesIcon = document.getElementById('likesIcon');
-  const panelContainer = document.getElementById('panelContainer');
-  const likesCarousel = document.getElementById('likesCarousel');
-  const playlistItems = document.getElementById('playlistItems');
-  const closePanelBtn = document.getElementById('closePanelBtn');
-  const togglePanelHeightBtn = document.getElementById('togglePanelHeightBtn');
-  const nextItems = document.getElementById('nextItems');
-  const recomendadosItems = document.getElementById('recomendadosItems');
-  const recomendadosSeparator = document.getElementById('recomendadosSeparator');
-  const textContent = document.getElementById('textContent');
-  const tabCola = document.getElementById('tabCola');
-  const tabDetalles = document.getElementById('tabDetalles');
-  const tabBiblioteca = document.getElementById('tabBiblioteca');
-  const tabVelocidad = document.getElementById('tabVelocidad');
-  const tabTemporizador = document.getElementById('tabTemporizador');
-  const colaContent = document.getElementById('colaContent');
-  const detallesContent = document.getElementById('detallesContent');
-  const bibliotecaContent = document.getElementById('bibliotecaContent');
-  const velocidadContent = document.getElementById('velocidadContent');
-  const temporizadorContent = document.getElementById('temporizadorContent');
-  const linkCola = document.getElementById('linkCola');
-  const linkDetalles = document.getElementById('linkDetalles');
-  const linkBiblioteca = document.getElementById('linkBiblioteca');
-  const speedContainer = document.querySelector('.speed-container');
-  const timerContainer = document.querySelector('.timer-container');
-  const overlayGradient = document.getElementById('overlayGradient');
-  const playPauseMedia = document.getElementById('playPauseMedia');
-  const playPauseIconMedia = document.getElementById('playPauseIconMedia');
-  const seekIndicatorLeft = document.getElementById('seekIndicatorLeft');
-  const seekSecondsLeft = document.getElementById('seekSecondsLeft');
-  const seekIndicatorRight = document.getElementById('seekIndicatorRight');
-  const seekSecondsRight = document.getElementById('seekSecondsRight');
-  const fullscreenControls = document.getElementById('fullscreenControls');
-  const fullscreenTitle = document.getElementById('fullscreenTitle');
-  const progressContainerFullscreen = document.getElementById('progressContainerFullscreen');
-  const progressBarFullscreen = document.getElementById('progressBarFullscreen');
-  const currentTimeFullscreen = document.getElementById('currentTimeFullscreen');
-  const durationFullscreen = document.getElementById('durationFullscreen');
-  const playPauseFullscreen = document.getElementById('playPauseFullscreen');
-  const playPauseIconFullscreen = document.getElementById('playPauseIconFullscreen');
-  const rewindFullscreen = document.getElementById('rewindFullscreen');
-  const forwardFullscreen = document.getElementById('forwardFullscreen');
-  const previousFullscreen = document.getElementById('previousFullscreen');
-  const nextFullscreen = document.getElementById('nextFullscreen');
-  const volumeFullscreen = document.getElementById('volumeFullscreen');
-  const volumeIconFullscreen = document.getElementById('volumeIconFullscreen');
-  const exitFullscreenBtn = document.getElementById('exitFullscreenBtn');
-  const muteIndicator = document.getElementById('muteIndicator');
-  const viewAllLikes = document.getElementById('viewAllLikes');
-  const likesView = document.getElementById('likesView');
-  const progressKnobFullscreen = document.createElement('div');
-  progressKnobFullscreen.className = 'progress-knob-fullscreen';
-  progressBarFullscreen.appendChild(progressKnobFullscreen);
+    <!-- MINI BAR -->
+    <div class="mp-mini" id="mp-mini">
+      <div class="mp-mini-progress" id="mp-mini-prog"><div class="mp-mini-progress-buf" id="mp-mini-buf"></div><div class="mp-mini-progress-fill" id="mp-mini-fill"></div></div>
+      <img class="mp-mini-cover" id="mp-mini-cover" src="" alt="" />
+      <div class="mp-mini-info" id="mp-mini-info">
+        <div class="mp-mini-title" id="mp-mini-title"></div>
+        <div class="mp-mini-author" id="mp-mini-author"></div>
+      </div>
+      <button class="mp-mini-btn" id="mp-mini-prev">${icon("prev",20)}</button>
+      <button class="mp-mini-btn" id="mp-mini-play">${icon("play",22)}</button>
+      <button class="mp-mini-btn" id="mp-mini-next">${icon("next",20)}</button>
+      <button class="mp-mini-btn" id="mp-mini-expand">${icon("expand",22)}</button>
+    </div>
+    `;
+    document.body.appendChild(root);
 
-  let currentMedia = null;
-  let isExpanded = false;
-  let isHidden = false;
-  let isLooping = false;
-  let isMuted = false;
-  let isDraggingExpanded = false;
-  let isDraggingMinimized = false;
-  let isDraggingFullscreen = false;
-  let touchStartY = 0;
-  let touchEndY = 0;
-  let swipeThreshold = 100;
-  let isSwiping = false;
-  let isPanelFullHeight = false;
-
-  // Grupos de pestañas (se mantienen por compatibilidad, pero ya no se usa para responsive)
-  const groups = {
-    content: ['cola', 'detalles', 'biblioteca'],
-    speed: ['velocidad'],
-    timer: ['temporizador']
-  };
-
-  const getGroup = (tab) => {
-    for (let g in groups) {
-      if (groups[g].includes(tab)) return g;
-    }
-    return 'content';
-  };
-
-  const updateVisibleTabs = (group) => {
-    document.querySelectorAll('.tabs a').forEach(t => {
-      t.classList.remove('visible');
-      const tabName = t.id.replace('tab', '').toLowerCase();
-      if (groups[group].includes(tabName)) {
-        t.classList.add('visible');
-      }
-    });
-  };
-
-  // --- Funciones de utilidad ---
-  const throttle = (func, limit) => {
-    let lastCall = null;
-    return (...args) => {
-      const now = Date.now();
-      if (!lastCall || now - lastCall > limit) {
-        lastCall = now;
-        return func(...args);
-      }
-    };
-  };
-  const throttledSaveState = throttle(saveState, 500);
-
-  const loadImageWithFallback = (imgElement, src, alt, fallbackSrc) => {
-    imgElement.src = src;
-    imgElement.alt = alt;
-    imgElement.onerror = () => {
-      imgElement.src = fallbackSrc || 'https://via.placeholder.com/24';
-      imgElement.onerror = null;
-    };
-  };
-
-  const cleanEvents = () => {
-    mediaElement.removeEventListener('timeupdate', updateProgress);
-    mediaElement.removeEventListener('loadedmetadata', updateProgress);
-    mediaElement.removeEventListener('volumechange', checkMute);
-    mediaElement.removeEventListener('ended', handleMediaEnd);
-    const newMediaElement = mediaElement.cloneNode(true);
-    mediaElement.parentNode.replaceChild(newMediaElement, mediaElement);
-    mediaElement = newMediaElement;
-    mediaElement.addEventListener('timeupdate', updateProgress);
-    mediaElement.addEventListener('loadedmetadata', updateProgress);
-    mediaElement.addEventListener('volumechange', checkMute);
-    mediaElement.addEventListener('ended', handleMediaEnd);
-  };
-
-  const mapEpisodeToMedia = (item) => {
-    return {
-      mediaUrl: item.mediaUrl || '',
-      mediaType: item.type || 'audio',
-      coverUrlContainer: item.coverUrl || '',
-      coverUrlInfo: item.series?.portada_serie || item.coverUrl || '',
-      title: item.title || '',
-      detailUrl: item.detailUrl || '',
-      author: item.series?.titulo_serie || 'Unknown',
-      next: [],
-      text: item.description || '',
-      allowDownload: true
-    };
-  };
-
-  // --- Persistencia ---
-  function saveState() {
-    const state = {
-      mediaUrl: currentMedia?.mediaUrl,
-      mediaType: currentMedia?.mediaType,
-      coverUrlContainer: currentMedia?.coverUrlContainer,
-      coverUrlInfo: currentMedia?.coverUrlInfo,
-      title: currentMedia?.title,
-      detailUrl: currentMedia?.detailUrl,
-      author: currentMedia?.author,
-      next: currentMedia?.next,
-      text: currentMedia?.text,
-      allowDownload: currentMedia?.allowDownload,
-      currentTime: mediaElement.currentTime,
-      isPlaying: !mediaElement.paused,
-      playbackRate: mediaElement.playbackRate,
-      isExpanded: isExpanded,
-      isHidden: isHidden,
-      isLooping: isLooping,
-      isMuted: mediaElement.muted,
-      isAudioMode: isAudioMode,
-      activeList: activeList,
-      userPlaylistAutoPlay: userPlaylistAutoPlay,
-      timerValue: timerValue,
-      repeatMode: repeatMode,
-      bgColor: playerBgColor
-    };
-    localStorage.setItem('playerState', JSON.stringify(state));
-    localStorage.setItem('playlist', JSON.stringify(playlist));
-    localStorage.setItem('likes', JSON.stringify(likes));
-    localStorage.setItem('history', JSON.stringify(historyList));
+    // Audio element (hidden)
+    const audio = document.createElement("audio");
+    audio.id = "mp-audio";
+    audio.preload = "auto";
+    audio.style.display = "none";
+    document.body.appendChild(audio);
   }
 
-  function loadState() {
-    const state = JSON.parse(localStorage.getItem('playerState')) || {};
-    if (state.bgColor) {
-      playerBgColor = state.bgColor;
-      applyBgColor();
-    }
-    if (state.mediaUrl) {
-      loadMedia(
-        state.mediaUrl,
-        state.mediaType,
-        state.coverUrlContainer,
-        state.coverUrlInfo,
-        state.title,
-        state.detailUrl,
-        state.author || 'Roberto',
-        state.next || [],
-        state.text || '',
-        state.allowDownload || true
-      );
-      mediaElement.addEventListener('canplay', () => {
-        mediaElement.currentTime = state.currentTime || 0;
-        mediaElement.playbackRate = state.playbackRate || 1;
-        mediaElement.muted = state.isMuted || false;
-        isAudioMode = state.isAudioMode || true;
-        updateMediaMode();
-        if (state.isPlaying) {
-          playWithFallback();
-          updateIcons(true);
-          updateOpenPlayerButton(true);
-        } else {
-          mediaElement.pause();
-          updateIcons(false);
-          updateOpenPlayerButton(false);
-        }
-      }, { once: true });
-      updateSpeedButtons(state.playbackRate || 1);
-      repeatMode = state.repeatMode || 0;
-      updateRepeatButton();
-      activeList = state.activeList || 'next';
-      userPlaylistAutoPlay = state.userPlaylistAutoPlay || false;
-      timerValue = state.timerValue || 0;
-      if (timerValue !== 0) {
-        setupTimer();
-      }
-      showMinimized();
-      updatePlaylist();
-      updateLikes();
-      updateModeToggleState();
-      cachedRecomendados = [...window.RECOMENDADOS];
-    } else {
-      const programa = window.PROGRAMA_DEL_DIA || {
-        mediaUrl: 'https://awscdn.podcasts.com/audio-vhhlggMJNysHnLYW8KXAQwu4w.mp3',
-        mediaType: 'audio',
-        coverUrlContainer: 'https://s3.amazonaws.com/podcasts-image-uploads/el-populismo-y-la-democracia-jesus-huerta-de-soto-1400x1400.png',
-        coverUrlInfo: 'https://www.edu.balta.lat/web/image/415-8ae27244/media.png',
-        title: 'El populismo y la democracia',
-        detailUrl: '#',
-        author: "Jesús Huerta de Soto",
-        text: "No disponible",
-        allowDownload: true
-      };
-      loadMedia(programa.mediaUrl, programa.mediaType, programa.coverUrlContainer, programa.coverUrlInfo, programa.title, programa.detailUrl, programa.author, [], programa.text, programa.allowDownload);
-      showMinimized();
-      cachedRecomendados = [...window.RECOMENDADOS];
-    }
-    updateMediaSession();
-  }
+  /* ── References ─────────────────────────────────────────── */
+  let els = {};
+  let audioEl, videoEl;
 
-  // --- Aplicar color de fondo dinámico ---
-  function applyBgColor() {
-    playerExpanded.style.backgroundColor = playerBgColor;
-    playerMinimized.style.backgroundColor = playerBgColor;
-    // El degradado oscuro se aplica mediante CSS con pseudo-elemento
-  }
-
-  // --- Funciones del reproductor (play, pause, etc.) ---
-  const playWithFallback = () => {
-    mediaElement.muted = isMuted;
-    mediaElement.play().then(() => {
-      updateIcons(true);
-      updateAllItemIcons(true);
-      isAutoMuted = false;
-      updateMediaSession();
-      updateOpenPlayerButton(true);
-    }).catch((error) => {
-      console.log("Autoplay blocked, trying muted:", error);
-      mediaElement.muted = true;
-      isMuted = true;
-      isAutoMuted = true;
-      isUserMuted = false;
-      mediaElement.play().then(() => {
-        updateIcons(true);
-        updateAllItemIcons(true);
-        showMuteIndicator();
-        updateMediaSession();
-        updateOpenPlayerButton(true);
-      }).catch((err) => {
-        console.log("Play failed:", err);
-      });
-    });
-  };
-
-  const showMuteIndicator = () => {
-    if (isAutoMuted && !isUserMuted) {
-      muteIndicator.style.display = 'block';
-    } else {
-      muteIndicator.style.display = 'none';
-    }
-  };
-
-  const updateMediaMode = () => {
-    mediaModeToggle.classList.toggle('audio', isAudioMode);
-    mediaModeToggle.classList.toggle('video', !isAudioMode);
-    if (isAudioMode) {
-      mediaElement.style.display = 'none';
-      mediaCover.style.display = 'block';
-      mediaModeToggle.querySelector('.mode-right').classList.add('disabled');
-    } else {
-      if (currentMedia.mediaType === 'video') {
-        mediaElement.style.display = 'block';
-        mediaCover.style.display = 'none';
-        mediaModeToggle.querySelector('.mode-right').classList.remove('disabled');
-      } else {
-        mediaElement.style.display = 'none';
-        mediaCover.style.display = 'block';
-        mediaModeToggle.querySelector('.mode-right').classList.add('disabled');
-      }
-    }
-  };
-
-  const toggleMediaMode = () => {
-    if (currentMedia.mediaType === 'video') {
-      isAudioMode = !isAudioMode;
-      updateMediaMode();
-      updateModeToggleState();
-      throttledSaveState();
-    }
-  };
-
-  const updateModeToggleState = () => {
-    const toggle = document.getElementById('mediaModeToggle');
-    if (!toggle) return;
-    const left = toggle.querySelector('.mode-left');
-    const right = toggle.querySelector('.mode-right');
-    toggle.classList.remove('disabled', 'audio', 'video', 'active-left', 'active-right');
-    left.classList.remove('active');
-    right.classList.remove('active');
-    if (!currentMedia || currentMedia.mediaType !== 'video') {
-      toggle.classList.add('disabled');
-      toggle.classList.add('audio');
-      left.classList.add('active');
-    } else {
-      toggle.classList.remove('disabled');
-      if (isAudioMode) {
-        toggle.classList.add('audio', 'active-left');
-        left.classList.add('active');
-      } else {
-        toggle.classList.add('video', 'active-right');
-        right.classList.add('active');
-      }
-    }
-  };
-
-  const updateDownloadButton = () => {
-    if (currentMedia.allowDownload) {
-      downloadBtn.classList.remove('disabled');
-      loadImageWithFallback(downloadIcon, 'https://nikichitonjesus.odoo.com/web/image/624-ec376d7f/descargar.png', 'Download', 'https://via.placeholder.com/20');
-    } else {
-      downloadBtn.classList.add('disabled');
-      loadImageWithFallback(downloadIcon, 'https://nikichitonjesus.odoo.com/web/image/1051-622a3db3/no-desc.webp', 'Download Disabled', 'https://via.placeholder.com/20');
-    }
-  };
-
-  const updateAddButton = () => {
-    if (playlist.some(item => item.mediaUrl === currentMedia?.mediaUrl)) {
-      loadImageWithFallback(addToPlaylistIcon, 'https://nikichitonjesus.odoo.com/web/image/1112-d141b3eb/a%C3%B1adido.png', 'Added', 'https://via.placeholder.com/20');
-    } else {
-      loadImageWithFallback(addToPlaylistIcon, 'https://nikichitonjesus.odoo.com/web/image/772-ea85aa4b/a%C3%B1adir%20a.png', 'Add to Playlist', 'https://via.placeholder.com/20');
-    }
-  };
-
-  const updateLikesButton = () => {
-    if (likes.some(item => item.mediaUrl === currentMedia?.mediaUrl)) {
-      loadImageWithFallback(likesIcon, 'https://nikichitonjesus.odoo.com/web/image/1069-2ad205f2/megus.webp', 'Liked', 'https://via.placeholder.com/20');
-      likesBtn.querySelector('span').textContent = 'Te gusta';
-    } else {
-      loadImageWithFallback(likesIcon, 'https://marca1.odoo.com/web/image/511-0363beb5/meg.svg', 'Me gusta', 'https://via.placeholder.com/20');
-      likesBtn.querySelector('span').textContent = 'Me gusta';
-    }
-  };
-
-  const toggleLikes = () => {
-    if (!currentMedia) return;
-    const index = likes.findIndex(item => item.mediaUrl === currentMedia.mediaUrl);
-    if (index > -1) {
-      likes.splice(index, 1);
-    } else {
-      likes.unshift({ ...currentMedia, addedDate: Date.now() });
-    }
-    localStorage.setItem('likes', JSON.stringify(likes));
-    updateLikes();
-    updateLikesButton();
-    throttledSaveState();
-  };
-
-  const updateLikes = () => {
-    likesCarousel.innerHTML = '';
-    likes.sort((a, b) => b.addedDate - a.addedDate);
-    likesView.className = 'likes-view ' + likesViewMode;
-    if (likes.length > 0) {
-      likes.forEach((item) => {
-        const div = document.createElement('div');
-        div.className = 'likes-item';
-        div.innerHTML = `
-          <img src="${item.coverUrlInfo || 'https://via.placeholder.com/80'}" alt="Cover" loading="lazy">
-          <span>${item.title}</span>
-        `;
-        div.addEventListener('click', (e) => {
-          e.stopPropagation();
-          loadMedia(item.mediaUrl, item.mediaType, item.coverUrlContainer, item.coverUrlInfo, item.title, item.detailUrl, item.author, item.next, item.text, item.allowDownload);
-          togglePlayPause(true);
-          throttledSaveState();
-        });
-        likesCarousel.appendChild(div);
-      });
-    } else {
-      likesCarousel.innerHTML = '<div class="no-items">No hay me gusta</div>';
-    }
-  };
-
-  const toggleLikesView = () => {
-    likesViewMode = likesViewMode === 'carousel' ? 'grid' : 'carousel';
-    updateLikes();
-    viewAllLikes.textContent = likesViewMode === 'grid' ? 'Ver carrusel' : 'Ver todo';
-  };
-
-  const updatePlaylist = () => {
-    playlistItems.innerHTML = '';
-    if (playlist.length > 0) {
-      playlist.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'playlist-item';
-        div.draggable = true;
-        div.dataset.index = index;
-        if (item.mediaUrl === currentMedia?.mediaUrl) {
-          div.classList.add('active');
-        }
-        div.innerHTML = `
-          <img class="cover" src="${item.coverUrlInfo || 'https://via.placeholder.com/30'}" alt="Cover" loading="lazy">
-          <span>${item.title}</span>
-          <div class="item-controls">
-            <button class="item-play-pause">
-              <img src="${(item.mediaUrl === currentMedia?.mediaUrl) ? (mediaElement.paused ? 'https://marca1.odoo.com/web/image/508-f876320c/play.svg' : 'https://nikichitonjesus.odoo.com/web/image/983-5c0bffd9/Pause.webp') : 'https://marca1.odoo.com/web/image/508-f876320c/play.svg'}" alt="Play/Pause" loading="lazy">
-            </button>
-            <button class="remove-playlist-item" data-index="${index}">
-              <img src="https://niki-chiton-jesus.odoo.com/web/image/457-5d13d269/remove.webp" alt="Remove" loading="lazy">
-            </button>
-            <div class="drag-handle">
-              <img src="https://nikichitonjesus.odoo.com/web/image/813-b2644056/listbtn.webp" alt="Drag" loading="lazy">
-            </div>
-          </div>
-        `;
-        div.addEventListener('click', (e) => {
-          if (!e.target.closest('.remove-playlist-item') && !e.target.closest('.drag-handle') && !e.target.closest('.item-play-pause')) {
-            e.stopPropagation();
-            currentIndex = index;
-            loadMedia(item.mediaUrl, item.mediaType, item.coverUrlContainer, item.coverUrlInfo, item.title, item.detailUrl, item.author, playlist, item.text, item.allowDownload);
-            togglePlayPause(true);
-            throttledSaveState();
-          }
-        });
-        div.querySelector('.item-play-pause').addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (item.mediaUrl !== currentMedia?.mediaUrl) {
-            currentIndex = index;
-            loadMedia(item.mediaUrl, item.mediaType, item.coverUrlContainer, item.coverUrlInfo, item.title, item.detailUrl, item.author, playlist, item.text, item.allowDownload);
-          }
-          togglePlayPause();
-        });
-        playlistItems.appendChild(div);
-      });
-      document.querySelectorAll('.remove-playlist-item').forEach(button => {
-        button.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const index = parseInt(e.target.closest('button').dataset.index);
-          playlist.splice(index, 1);
-          localStorage.setItem('playlist', JSON.stringify(playlist));
-          if (index <= currentIndex) {
-            currentIndex--;
-          }
-          updatePlaylist();
-          updateAddButton();
-        });
-      });
-      setupPlaylistDrag();
-    } else {
-      playlistItems.innerHTML = '<div class="no-items">No has agregado tus episodios</div>';
-    }
-  };
-
-  const setupPlaylistDrag = () => {
-    const items = playlistItems.querySelectorAll('.playlist-item');
-    items.forEach(item => {
-      item.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', item.dataset.index);
-        item.classList.add('dragging');
-      });
-      item.addEventListener('dragend', (e) => {
-        item.classList.remove('dragging');
-      });
-      item.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        const dragging = playlistItems.querySelector('.dragging');
-        if (dragging !== item) {
-          const from = parseInt(dragging.dataset.index);
-          const to = parseInt(item.dataset.index);
-          if (from < to) {
-            item.after(dragging);
-          } else {
-            item.before(dragging);
-          }
-          const newItems = playlistItems.querySelectorAll('.playlist-item');
-          newItems.forEach((it, idx) => it.dataset.index = idx);
-          const temp = playlist[from];
-          playlist.splice(from, 1);
-          playlist.splice(to, 0, temp);
-          localStorage.setItem('playlist', JSON.stringify(playlist));
-          currentIndex = playlist.findIndex(p => p.mediaUrl === currentMedia.mediaUrl);
-        }
-      });
-      item.addEventListener('drop', (e) => {
-        e.preventDefault();
-      });
-      item.addEventListener('touchstart', (e) => {
-        if (e.target.closest('.drag-handle')) {
-          item.classList.add('dragging');
-        }
-      });
-      item.addEventListener('touchmove', (e) => {
-        if (item.classList.contains('dragging')) {
-          e.preventDefault();
-        }
-      });
-      item.addEventListener('touchend', (e) => {
-        item.classList.remove('dragging');
-      });
-    });
-  };
-
-  const updateNextList = () => {
-    nextItems.innerHTML = '';
-    if (nextList.length > 0) {
-      nextList.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'next-item';
-        if (item.mediaUrl === currentMedia?.mediaUrl) {
-          div.classList.add('active');
-        }
-        div.innerHTML = `
-          <img class="cover" src="${item.coverUrlInfo || 'https://via.placeholder.com/30'}" alt="Cover" loading="lazy">
-          <span>${item.title}</span>
-          <div class="item-controls">
-            <button class="item-play-pause">
-              <img src="${(item.mediaUrl === currentMedia?.mediaUrl) ? (mediaElement.paused ? 'https://marca1.odoo.com/web/image/508-f876320c/play.svg' : 'https://nikichitonjesus.odoo.com/web/image/983-5c0bffd9/Pause.webp') : 'https://marca1.odoo.com/web/image/508-f876320c/play.svg'}" alt="Play/Pause" loading="lazy">
-            </button>
-          </div>
-        `;
-        div.addEventListener('click', (e) => {
-          e.stopPropagation();
-          currentIndex = index;
-          loadMedia(item.mediaUrl, item.mediaType, item.coverUrlContainer, item.coverUrlInfo, item.title, item.detailUrl, item.author, nextList, item.text, item.allowDownload);
-          togglePlayPause(true);
-          throttledSaveState();
-        });
-        div.querySelector('.item-play-pause').addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (item.mediaUrl !== currentMedia?.mediaUrl) {
-            currentIndex = index;
-            loadMedia(item.mediaUrl, item.mediaType, item.coverUrlContainer, item.coverUrlInfo, item.title, item.detailUrl, item.author, nextList, item.text, item.allowDownload);
-          }
-          togglePlayPause();
-        });
-        nextItems.appendChild(div);
-      });
-    } else {
-      nextItems.innerHTML = '<div class="no-items">Episodio único</div>';
-    }
-  };
-
-  const updateRecomendadosList = () => {
-    if (cachedRecomendados.length === 0) {
-      cachedRecomendados = [...window.RECOMENDADOS];
-    }
-    recomendadosItems.innerHTML = '';
-    if (cachedRecomendados.length > 0) {
-      recomendadosSeparator.style.display = 'block';
-      cachedRecomendados.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'next-item';
-        div.innerHTML = `
-          <img class="cover" src="${item.coverUrl || 'https://via.placeholder.com/30'}" alt="Cover" loading="lazy">
-          <span>${item.title}</span>
-          <div class="item-controls">
-            <button class="item-play-pause">
-              <img src="${(item.mediaUrl === currentMedia?.mediaUrl) ? (mediaElement.paused ? 'https://marca1.odoo.com/web/image/508-f876320c/play.svg' : 'https://nikichitonjesus.odoo.com/web/image/983-5c0bffd9/Pause.webp') : 'https://marca1.odoo.com/web/image/508-f876320c/play.svg'}" alt="Play/Pause" loading="lazy">
-            </button>
-          </div>
-        `;
-        div.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const mappedItem = mapEpisodeToMedia(item);
-          loadMedia(
-            mappedItem.mediaUrl,
-            mappedItem.mediaType,
-            mappedItem.coverUrlContainer,
-            mappedItem.coverUrlInfo,
-            mappedItem.title,
-            mappedItem.detailUrl,
-            mappedItem.author,
-            mappedItem.next,
-            mappedItem.text,
-            mappedItem.allowDownload,
-            true,
-            index
-          );
-          togglePlayPause(true);
-          throttledSaveState();
-        });
-        div.querySelector('.item-play-pause').addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (item.mediaUrl !== currentMedia?.mediaUrl) {
-            const mappedItem = mapEpisodeToMedia(item);
-            loadMedia(
-              mappedItem.mediaUrl,
-              mappedItem.mediaType,
-              mappedItem.coverUrlContainer,
-              mappedItem.coverUrlInfo,
-              mappedItem.title,
-              mappedItem.detailUrl,
-              mappedItem.author,
-              mappedItem.next,
-              mappedItem.text,
-              mappedItem.allowDownload,
-              true,
-              index
-            );
-          }
-          togglePlayPause();
-        });
-        recomendadosItems.appendChild(div);
-      });
-    } else {
-      recomendadosSeparator.style.display = 'none';
-    }
-  };
-
-  const updateTextContent = () => {
-    textContent.innerHTML = `<h4>${currentMedia?.title || ''}</h4><p>${episodeText || 'No hay texto disponible'}</p>`;
-  };
-
-  const showExpanded = () => {
-    isExpanded = true;
-    isHidden = false;
-    playerExpanded.style.display = 'flex';
-    playerMinimized.style.display = 'none';
-    throttledSaveState();
-    updatePlaylist();
-    updateLikes();
-    updateNextList();
-    updateRecomendadosList();
-    updateTextContent();
-    checkTitleOverflow();
-    checkMinimizedTitleOverflow();
-  };
-
-  const showMinimized = () => {
-    isExpanded = false;
-    isHidden = false;
-    playerExpanded.style.display = 'none';
-    playerMinimized.style.display = 'flex';
-    panelContainer.style.display = 'none';
-    throttledSaveState();
-    checkTitleOverflow();
-    checkMinimizedTitleOverflow();
-  };
-
-  const hidePlayer = () => {
-    isHidden = true;
-    playerExpanded.style.display = 'none';
-    playerMinimized.style.display = 'none';
-    panelContainer.style.display = 'none';
-    throttledSaveState();
-  };
-
-  const togglePanel = (tab = 'cola') => {
-    const wasVisible = panelContainer.style.display === 'flex';
-    panelContainer.style.display = wasVisible ? 'none' : 'flex';
-    if (panelContainer.style.display === 'flex') {
-      const group = getGroup(tab);
-      updateVisibleTabs(group);
-      switchTab(tab);
-      closePanelBtn.classList.add('visible');
-      isPanelFullHeight = false;
-      panelContainer.classList.remove('full-height');
-      togglePanelHeightBtn.querySelector('img').src = 'https://marca1.odoo.com/web/image/513-e0bcd17f/maz.svg';
-      minimizeBtn.style.position = 'fixed';
-      minimizeBtn.style.bottom = 'auto';
-      minimizeBtn.style.top = 'max(12px, env(safe-area-inset-top))';
-    } else {
-      closePanelBtn.classList.remove('visible');
-    }
-  };
-
-  const togglePanelHeight = () => {
-    isPanelFullHeight = !isPanelFullHeight;
-    panelContainer.classList.toggle('full-height', isPanelFullHeight);
-    togglePanelHeightBtn.querySelector('img').src = isPanelFullHeight ? 'https://marca1.odoo.com/web/image/514-efa5e8dd/minimizar.svg' : 'https://marca1.odoo.com/web/image/513-e0bcd17f/maz.svg';
-    if (isPanelFullHeight) {
-      minimizeBtn.style.position = 'absolute';
-      minimizeBtn.style.bottom = '10px';
-      minimizeBtn.style.top = 'auto';
-    } else {
-      minimizeBtn.style.position = 'fixed';
-      minimizeBtn.style.bottom = 'auto';
-      minimizeBtn.style.top = 'max(12px, env(safe-area-inset-top))';
-    }
-  };
-
-  const switchTab = (tab) => {
-    document.querySelectorAll('.tabs a').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
-    if (tab === 'cola') {
-      tabCola.classList.add('active');
-      colaContent.classList.add('active');
-    } else if (tab === 'detalles') {
-      tabDetalles.classList.add('active');
-      detallesContent.classList.add('active');
-    } else if (tab === 'biblioteca') {
-      tabBiblioteca.classList.add('active');
-      bibliotecaContent.classList.add('active');
-    } else if (tab === 'velocidad') {
-      tabVelocidad.classList.add('active');
-      velocidadContent.classList.add('active');
-    } else if (tab === 'temporizador') {
-      tabTemporizador.classList.add('active');
-      temporizadorContent.classList.add('active');
-      updateTimerView();
-    }
-  };
-
-  const updateTimerView = () => {
-    if (timerValue !== 0 && timerValue !== '0') {
-      timerCountdown.style.display = 'flex';
-      timerOptions.style.display = 'none';
-    } else {
-      timerCountdown.style.display = 'none';
-      timerOptions.style.display = 'block';
-    }
-  };
-
-  const updateIcons = (isPlaying) => {
-    const playIcon = 'https://marca1.odoo.com/web/image/508-f876320c/play.svg';
-    const pauseIcon = 'https://nikichitonjesus.odoo.com/web/image/983-5c0bffd9/Pause.webp';
-    loadImageWithFallback(playPauseIconExpanded, isPlaying ? pauseIcon : playIcon, isPlaying ? 'Pause' : 'Play', 'https://via.placeholder.com/24');
-    loadImageWithFallback(playPauseIconMinimized, isPlaying ? pauseIcon : playIcon, isPlaying ? 'Pause' : 'Play', 'https://via.placeholder.com/24');
-    loadImageWithFallback(playPauseIconMedia, isPlaying ? pauseIcon : playIcon, isPlaying ? 'Pause' : 'Play', 'https://via.placeholder.com/24');
-    loadImageWithFallback(playPauseIconFullscreen, isPlaying ? pauseIcon : playIcon, isPlaying ? 'Pause' : 'Play', 'https://via.placeholder.com/24');
-  };
-
-  const updateAllItemIcons = (isPlaying) => {
-    document.querySelectorAll('.item-play-pause img').forEach(icon => {
-      const item = icon.closest('.playlist-item, .next-item');
-      const isCurrent = item.classList.contains('active');
-      loadImageWithFallback(icon, isCurrent ? (isPlaying ? 'https://nikichitonjesus.odoo.com/web/image/983-5c0bffd9/Pause.webp' : 'https://nikichitonjesus.odoo.com/web/image/984-ba35a699/play.webp') : 'https://marca1.odoo.com/web/image/508-f876320c/play.svg', isPlaying ? 'Pause' : 'Play', 'https://via.placeholder.com/20');
-    });
-  };
-
-  const togglePlayPause = (forcePlay = false) => {
-    if (mediaElement.dataset.isToggling === 'true') return;
-    mediaElement.dataset.isToggling = 'true';
-    if (forcePlay || mediaElement.paused) {
-      playWithFallback();
-      updateOpenPlayerButton(true);
-    } else {
-      mediaElement.pause();
-      updateIcons(false);
-      updateAllItemIcons(false);
-      updateOpenPlayerButton(false);
-    }
-    checkMute();
-    throttledSaveState();
-    setTimeout(() => {
-      mediaElement.dataset.isToggling = 'false';
-    }, 100);
-  };
-
-  const rewind = (seconds = 15) => {
-    if (isNaN(mediaElement.duration)) return;
-    mediaElement.currentTime = Math.max(0, mediaElement.currentTime - seconds);
-    showSeekIndicator('left', seconds);
-    throttledSaveState();
-  };
-
-  const forward = (seconds = 15) => {
-    if (isNaN(mediaElement.duration)) return;
-    mediaElement.currentTime = Math.min(mediaElement.duration, mediaElement.currentTime + seconds);
-    showSeekIndicator('right', seconds);
-    throttledSaveState();
-  };
-
-  const previous = () => {
-    if (repeatMode !== 0) return;
-    if (activeList === 'playlist' && userPlaylistAutoPlay && currentIndex > 0) {
-      currentIndex--;
-      const item = playlist[currentIndex];
-      loadMedia(item.mediaUrl, item.mediaType, item.coverUrlContainer, item.coverUrlInfo, item.title, item.detailUrl, item.author, playlist, item.text, item.allowDownload);
-      togglePlayPause(true);
-    } else if (activeList === 'next' && currentIndex > 0) {
-      currentIndex--;
-      const item = nextList[currentIndex];
-      loadMedia(item.mediaUrl, item.mediaType, item.coverUrlContainer, item.coverUrlInfo, item.title, item.detailUrl, item.author, nextList, item.text, item.allowDownload);
-      togglePlayPause(true);
-    } else if (historyList.length > 0) {
-      const prevItem = historyList.pop();
-      loadMedia(prevItem.mediaUrl, prevItem.mediaType, prevItem.coverUrlContainer, prevItem.coverUrlInfo, prevItem.title, prevItem.detailUrl, prevItem.author, prevItem.next, prevItem.text, prevItem.allowDownload);
-      togglePlayPause(true);
-    } else {
-      mediaElement.currentTime = 0;
-    }
-    throttledSaveState();
-  };
-
-  const next = () => {
-    if (repeatMode !== 0) return;
-    if (activeList === 'next' && currentIndex < nextList.length - 1) {
-      currentIndex++;
-      const item = nextList[currentIndex];
-      loadMedia(item.mediaUrl, item.mediaType, item.coverUrlContainer, item.coverUrlInfo, item.title, item.detailUrl, item.author, nextList, item.text, item.allowDownload);
-      togglePlayPause(true);
-    } else if (activeList === 'playlist' && userPlaylistAutoPlay && currentIndex < playlist.length - 1) {
-      currentIndex++;
-      const item = playlist[currentIndex];
-      loadMedia(item.mediaUrl, item.mediaType, item.coverUrlContainer, item.coverUrlInfo, item.title, item.detailUrl, item.author, playlist, item.text, item.allowDownload);
-      togglePlayPause(true);
-    } else if (userPlaylistAutoPlay && playlist.length > 0) {
-      activeList = 'playlist';
-      currentIndex = 0;
-      const item = playlist[currentIndex];
-      loadMedia(item.mediaUrl, item.mediaType, item.coverUrlContainer, item.coverUrlInfo, item.title, item.detailUrl, item.author, playlist, item.text, item.allowDownload);
-      togglePlayPause(true);
-    } else if (cachedRecomendados.length > 0) {
-      const nextRecItem = cachedRecomendados.shift();
-      const mappedRec = mapEpisodeToMedia(nextRecItem);
-      loadMedia(
-        mappedRec.mediaUrl,
-        mappedRec.mediaType,
-        mappedRec.coverUrlContainer,
-        mappedRec.coverUrlInfo,
-        mappedRec.title,
-        mappedRec.detailUrl,
-        mappedRec.author,
-        cachedRecomendados.map(mapEpisodeToMedia),
-        mappedRec.text,
-        mappedRec.allowDownload,
-        true,
-        0
-      );
-      togglePlayPause(true);
-    }
-    throttledSaveState();
-  };
-
-  const handleMediaEnd = () => {
-    if (repeatMode === 2) {
-      mediaElement.play();
-    } else if (repeatMode === 1) {
-      mediaElement.play();
-      repeatMode = 0;
-      updateRepeatButton();
-    } else {
-      if (activeList === 'next' && currentIndex < nextList.length - 1) {
-        currentIndex++;
-        const nextItem = nextList[currentIndex];
-        loadMedia(nextItem.mediaUrl, nextItem.mediaType, nextItem.coverUrlContainer, nextItem.coverUrlInfo, nextItem.title, nextItem.detailUrl, nextItem.author, nextList, nextItem.text, nextItem.allowDownload);
-        togglePlayPause(true);
-      } else if (activeList === 'playlist' && userPlaylistAutoPlay && currentIndex < playlist.length - 1) {
-        currentIndex++;
-        const nextItem = playlist[currentIndex];
-        loadMedia(nextItem.mediaUrl, nextItem.mediaType, nextItem.coverUrlContainer, nextItem.coverUrlInfo, nextItem.title, nextItem.detailUrl, nextItem.author, playlist, nextItem.text, nextItem.allowDownload);
-        togglePlayPause(true);
-      } else if (userPlaylistAutoPlay && playlist.length > 0) {
-        activeList = 'playlist';
-        currentIndex = 0;
-        const nextItem = playlist[currentIndex];
-        loadMedia(nextItem.mediaUrl, nextItem.mediaType, nextItem.coverUrlContainer, nextItem.coverUrlInfo, nextItem.title, nextItem.detailUrl, nextItem.author, playlist, nextItem.text, nextItem.allowDownload);
-        togglePlayPause(true);
-      } else if (cachedRecomendados.length > 0) {
-        const nextRecItem = cachedRecomendados.shift();
-        const mappedRec = mapEpisodeToMedia(nextRecItem);
-        loadMedia(
-          mappedRec.mediaUrl,
-          mappedRec.mediaType,
-          mappedRec.coverUrlContainer,
-          mappedRec.coverUrlInfo,
-          mappedRec.title,
-          mappedRec.detailUrl,
-          mappedRec.author,
-          cachedRecomendados.map(mapEpisodeToMedia),
-          mappedRec.text,
-          mappedRec.allowDownload,
-          true,
-          0
-        );
-        togglePlayPause(true);
-      }
-    }
-    throttledSaveState();
-  };
-
-  const handleMediaTap = (e) => {
-    if (e.target.closest('button')) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const now = Date.now();
-    if (now - lastTapTime < 250) {
-      tapCount++;
-    } else {
-      tapCount = 1;
-    }
-    lastTapTime = now;
-    const rect = mediaContainer.getBoundingClientRect();
-    let x;
-    if (e.changedTouches) {
-      x = e.changedTouches[0].clientX - rect.left;
-    } else {
-      x = e.clientX - rect.left;
-    }
-    tapSide = x < rect.width / 2 ? 'left' : 'right';
-    if (tapTimeout) clearTimeout(tapTimeout);
-    tapTimeout = setTimeout(() => {
-      if (tapCount === 1) {
-        showControls = !showControls;
-        mediaContainer.classList.toggle('show-controls', showControls);
-        if (showControls) {
-          muteIndicator.style.display = 'none';
-        } else if (isAutoMuted && !isUserMuted) {
-          showMuteIndicator();
-        }
-      } else if (tapCount > 1) {
-        const seconds = 15 * (tapCount - 1);
-        if (tapSide === 'left') {
-          rewind(seconds);
-        } else {
-          forward(seconds);
-        }
-      }
-      tapCount = 0;
-    }, 250);
-  };
-
-  let autoHideTimer = null;
-  const handleFullscreenTap = (e) => {
-    if (!isFullscreenMode || e.target.closest('button')) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const isShown = fullscreenControls.classList.toggle('show-controls');
-    if (isShown) {
-      startAutoHideTimer();
-    }
-  };
-
-  const startAutoHideTimer = () => {
-    clearTimeout(autoHideTimer);
-    autoHideTimer = setTimeout(() => {
-      if (isFullscreenMode) {
-        fullscreenControls.classList.remove('show-controls');
-      } else {
-        mediaContainer.classList.remove('show-controls');
-      }
-    }, 3000);
-  };
-
-  const showSeekIndicator = (side, seconds) => {
-    const indicator = side === 'left' ? seekIndicatorLeft : seekIndicatorRight;
-    const secondsElem = side === 'left' ? seekSecondsLeft : seekSecondsRight;
-    secondsElem.textContent = `${seconds}s`;
-    indicator.classList.add('show');
-    setTimeout(() => indicator.classList.remove('show'), 1000);
-  };
-
-  const updateProgress = () => {
-    if (!mediaElement.duration) return;
-    const percentage = (mediaElement.currentTime / mediaElement.duration) * 100;
-    progressBarExpanded.style.width = percentage + '%';
-    progressBarMinimized.style.width = percentage + '%';
-    progressBarFullscreen.style.width = percentage + '%';
-    currentTimeExpanded.textContent = formatTime(mediaElement.currentTime);
-    durationExpanded.textContent = formatTime(mediaElement.duration);
-    currentTimeFullscreen.textContent = formatTime(mediaElement.currentTime);
-    durationFullscreen.textContent = formatTime(mediaElement.duration);
-    throttledSaveState();
-  };
-
-  const formatTime = (seconds) => {
-    if (isNaN(seconds)) return "00:00";
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const updateProgressDrag = (clientX, container, progressBar) => {
-    const rect = container.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const width = rect.width;
-    let percentage = (x / width) * 100;
-    percentage = Math.max(0, Math.min(100, percentage));
-    progressBar.style.width = percentage + '%';
-    if (mediaElement.duration) {
-      mediaElement.currentTime = (percentage / 100) * mediaElement.duration;
-    }
-    throttledSaveState();
-  };
-
-  const updateSpeedButtons = (value) => {
-    currentSpeed.textContent = `${value}x`;
-    if (value !== 1) {
-      speedContainer.classList.add('active');
-    } else {
-      speedContainer.classList.remove('active');
-    }
-  };
-
-  const setupTimer = () => {
-    if (timerId) clearTimeout(timerId);
-    if (timerCountdownInterval) clearInterval(timerCountdownInterval);
-    if (timerValue === 'end') {
-      currentEpisodeId = currentMedia.mediaUrl;
-      const updateEndTimer = () => {
-        const remaining = mediaElement.duration - mediaElement.currentTime;
-        if (remaining <= 0 && currentEpisodeId === currentMedia.mediaUrl) {
-          mediaElement.pause();
-          resetTimer();
-        }
-      };
-      mediaElement.addEventListener('timeupdate', updateEndTimer);
-      timerCountdownInterval = setInterval(() => {
-        countdownDisplay.textContent = formatTime(mediaElement.duration - mediaElement.currentTime);
-      }, 1000);
-    } else if (timerValue !== '0') {
-      const minutes = parseInt(timerValue);
-      let remaining = minutes * 60;
-      timerId = setTimeout(() => {
-        mediaElement.pause();
-        resetTimer();
-      }, remaining * 1000);
-      timerCountdownInterval = setInterval(() => {
-        remaining--;
-        countdownDisplay.textContent = formatTime(remaining);
-        if (remaining <= 0) clearInterval(timerCountdownInterval);
-      }, 1000);
-    }
-    updateTimerButtons(timerValue);
-    if (timerValue !== '0') timerContainer.classList.add('active');
-  };
-
-  const resetTimer = () => {
-    if (timerId) clearTimeout(timerId);
-    if (timerCountdownInterval) clearInterval(timerCountdownInterval);
-    timerValue = 0;
-    timerId = null;
-    timerCountdownInterval = null;
-    currentEpisodeId = null;
-    timerContainer.classList.remove('active');
-    timerCountdown.style.display = 'none';
-    timerOptions.style.display = 'block';
-    updateTimerButtons(0);
-    throttledSaveState();
-  };
-
-  const updateTimerButtons = (value) => {
-    timerOptions.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
-    const btn = timerOptions.querySelector(`button[data-value="${value}"]`);
-    if (btn) btn.classList.add('selected');
-  };
-
-  const checkTitleOverflow = () => {
-    [episodeTitle].forEach(title => {
-      if (!title) return;
-      const parent = title.parentElement;
-      if (!parent) return;
-      title.classList.remove('scrolling-title');
-      title.style.animation = 'none';
-      requestAnimationFrame(() => {
-        const availableWidth = parent.offsetWidth;
-        if (title.scrollWidth > availableWidth) {
-          title.classList.add('scrolling-title');
-          title.style.animation = 'scrollTitle 40s linear infinite';
-        }
-      });
-    });
-  };
-
-  const checkMinimizedTitleOverflow = () => {
-    const title = episodeTitleMinimized;
-    const parent = title.parentElement;
-    if (!parent) return;
-    title.classList.remove('scrolling');
-    title.style.animation = 'none';
-    requestAnimationFrame(() => {
-      const availableWidth = parent.offsetWidth;
-      if (title.scrollWidth > availableWidth) {
-        title.classList.add('scrolling');
-        title.style.animation = 'scrollMinimizedTitle 20s linear infinite';
-      }
-    });
-  };
-
-  const checkMute = () => {
-    isMuted = mediaElement.muted;
-    isUserMuted = !isAutoMuted && isMuted;
-    const volumeIconSrc = isMuted ? 'https://nikichitonjesus.odoo.com/web/image/584-d2f5c35f/mute.png' : 'https://nikichitonjesus.odoo.com/web/image/587-e4437449/volumen.png';
-    loadImageWithFallback(volumeIcon, volumeIconSrc, isMuted ? 'Muted' : 'Volume', 'https://via.placeholder.com/24');
-    loadImageWithFallback(volumeIconFullscreen, volumeIconSrc, isMuted ? 'Muted' : 'Volume', 'https://via.placeholder.com/24');
-    showMuteIndicator();
-    throttledSaveState();
-  };
-
-  const updateRepeatButton = () => {
-    const span = repeatBtn.querySelector('span');
-    if (repeatMode === 0) {
-      span.textContent = 'Repetir';
-    } else if (repeatMode === 1) {
-      span.textContent = 'Repetir una vez';
-    } else {
-      span.textContent = 'Repetir infinito';
-    }
-    repeatBtn.classList.toggle('repeat-active', repeatMode > 0);
-  };
-
-  // Actualiza ícono y texto del botón externo #openPlayerBtn
-  const updateOpenPlayerButton = (isPlaying) => {
-    const openPlayerBtn = document.querySelector('#openPlayerBtn');
-    if (!openPlayerBtn) return;
-    const img = openPlayerBtn.querySelector('img');
-    const textSpan = openPlayerBtn.querySelector('span');
-    if (img && textSpan) {
-      if (isPlaying) {
-        img.src = 'https://nikichitonjes-home.odoo.com/web/image/477-973a1ff8/Escuchar.gif';
-        img.alt = 'Escuchando';
-        textSpan.textContent = 'Escuchando';
-      } else {
-        img.src = 'https://nikichitonjes-home.odoo.com/web/image/478-0e3df8d3/reanudar.gif';
-        img.alt = 'Escuchar';
-        textSpan.textContent = 'Escuchar';
-      }
-    }
-  };
-
-  // Event listeners
-  mediaContainer.addEventListener('mouseenter', () => {
-    if (isFullscreenMode) return;
-    mediaContainer.classList.add('show-controls');
-    startAutoHideTimer();
-  });
-  mediaContainer.addEventListener('mousemove', startAutoHideTimer);
-  mediaContainer.addEventListener('click', handleFullscreenTap);
-  mediaContainer.addEventListener('touchend', handleFullscreenTap);
-  mediaElement.addEventListener('timeupdate', updateProgress);
-  mediaElement.addEventListener('loadedmetadata', updateProgress);
-  mediaElement.addEventListener('ended', handleMediaEnd);
-  mediaElement.addEventListener('play', () => { 
-    updateIcons(true); 
-    updateAllItemIcons(true); 
-    updateOpenPlayerButton(true);
-  });
-  mediaElement.addEventListener('pause', () => { 
-    updateIcons(false); 
-    updateAllItemIcons(false); 
-    updateOpenPlayerButton(false);
-  });
-  mediaContainer.addEventListener('touchend', handleMediaTap);
-  mediaContainer.addEventListener('click', handleMediaTap);
-  speedContainer.addEventListener('click', (e) => {
-    e.stopPropagation();
-    togglePanel('velocidad');
-  });
-  speedContainer.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    togglePanel('velocidad');
-  });
-  timerContainer.addEventListener('click', (e) => {
-    e.stopPropagation();
-    togglePanel('temporizador');
-    setTimeout(updateTimerView, 100);
-  });
-  timerContainer.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    togglePanel('temporizador');
-    setTimeout(updateTimerView, 100);
-  });
-  speedSlider.addEventListener('input', () => {
-    const value = parseFloat(speedSlider.value);
-    mediaElement.playbackRate = value;
-    updateSpeedButtons(value);
-    throttledSaveState();
-  });
-  timerOptions.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      timerValue = btn.dataset.value;
-      setupTimer();
-      togglePanel();
-      throttledSaveState();
-      updateTimerView();
-    });
-  });
-  deactivateTimer.addEventListener('click', (e) => {
-    e.stopPropagation();
-    resetTimer();
-    togglePanel();
-    updateTimerView();
-  });
-  minimizeBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    showMinimized();
-  });
-  minimizeBtn.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    showMinimized();
-  });
-  expandBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    showExpanded();
-  });
-  expandBtn.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    showExpanded();
-  });
-  playerMinimized.addEventListener('click', (e) => {
-    if (!progressContainerMinimized.contains(e.target) && !e.target.closest('.minimized-controls')) {
-      showExpanded();
-    }
-  });
-  episodeInfo.addEventListener('click', (e) => {
-    if (e.target.closest('#addToPlaylistBtn')) return;
-    if (currentMedia?.detailUrl) {
-      window.location.href = currentMedia.detailUrl;
-    }
-  });
-  mediaModeToggle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggleMediaMode();
-  });
-  fullscreenBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (!document.fullscreenElement) {
-      mediaContainer.requestFullscreen().then(() => {
-        isFullscreenMode = true;
-        fullscreenControls.style.display = 'flex';
-        loadImageWithFallback(fullscreenBtn.querySelector('img'), 'https://nikichitonjesus.odoo.com/web/image/623-e47eb360/Exitfull.png', 'Exit Fullscreen', 'https://via.placeholder.com/24');
-        if (screen.orientation && screen.orientation.lock) {
-          screen.orientation.lock('landscape').catch(() => {});
-        }
-        overlayGradient.style.display = 'none';
-        mediaContainer.classList.remove('show-controls');
-        startAutoHideTimer();
-      }).catch(err => console.log('Fullscreen error:', err));
-    } else {
-      document.exitFullscreen().then(() => {
-        isFullscreenMode = false;
-        fullscreenControls.style.display = 'none';
-        loadImageWithFallback(fullscreenBtn.querySelector('img'), 'https://media.baltaanay.org/web/image/883-49c31be4/full.png', 'Fullscreen', 'https://via.placeholder.com/24');
-        overlayGradient.style.display = 'flex';
-      });
-    }
-  });
-  exitFullscreenBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    }
-  });
-  exitFullscreenBtn.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    }
-  });
-  document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement) {
-      isFullscreenMode = false;
-      fullscreenControls.style.display = 'none';
-      loadImageWithFallback(fullscreenBtn.querySelector('img'), 'https://media.baltaanay.org/web/image/883-49c31be4/full.png', 'Fullscreen', 'https://via.placeholder.com/24');
-      overlayGradient.style.display = 'flex';
-      clearTimeout(autoHideTimer);
-    } else {
-      fullscreenControls.style.display = 'flex';
-      overlayGradient.style.display = 'none';
-      startAutoHideTimer();
-    }
-  });
-  previousFullscreen.addEventListener('click', (e) => {
-    e.stopPropagation();
-    previous();
-  });
-  rewindFullscreen.addEventListener('click', (e) => {
-    e.stopPropagation();
-    rewind();
-  });
-  playPauseFullscreen.addEventListener('click', (e) => {
-    e.stopPropagation();
-    togglePlayPause();
-  });
-  forwardFullscreen.addEventListener('click', (e) => {
-    e.stopPropagation();
-    forward();
-  });
-  nextFullscreen.addEventListener('click', (e) => {
-    e.stopPropagation();
-    next();
-  });
-  volumeFullscreen.addEventListener('click', (e) => {
-    e.stopPropagation();
-    mediaElement.muted = !mediaElement.muted;
-    checkMute();
-  });
-  volumeBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    mediaElement.muted = !mediaElement.muted;
-    checkMute();
-  });
-  playPauseMedia.addEventListener('click', (e) => {
-    e.stopPropagation();
-    togglePlayPause();
-  });
-  downloadBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (!currentMedia.allowDownload) return;
-    downloadBtn.classList.add('active');
-    setTimeout(() => downloadBtn.classList.remove('active'), 200);
-    if (currentMedia?.mediaUrl) {
-      const link = document.createElement('a');
-      link.href = currentMedia.mediaUrl;
-      link.target = '_blank';
-      link.download = currentMedia.title || 'media';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      alert('No hay archivo para descargar.');
-    }
-  });
-  shareBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    shareBtn.classList.add('active');
-    setTimeout(() => shareBtn.classList.remove('active'), 200);
-    if (currentMedia?.title && currentMedia?.detailUrl) {
-      if (navigator.share && typeof navigator.share === 'function') {
-        navigator.share({
-          title: currentMedia.title,
-          url: currentMedia.detailUrl,
-        }).catch((error) => {
-          console.log('Error al compartir:', error);
-        });
-      } else {
-        navigator.clipboard.writeText(`${currentMedia.title}: ${currentMedia.detailUrl}`)
-          .then(() => alert('Enlace copiado al portapapeles'))
-          .catch(() => alert('Error al copiar el enlace'));
-      }
-    } else {
-      alert('No hay contenido para compartir.');
-    }
-  });
-  programBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const programa = window.PROGRAMA_DEL_DIA || {
-      mediaUrl: 'https://awscdn.podcasts.com/audio-vhhlggMJNysHnLYW8KXAQwu4w.mp3',
-      mediaType: 'audio',
-      coverUrlContainer: 'https://s3.amazonaws.com/podcasts-image-uploads/el-populismo-y-la-democracia-jesus-huerta-de-soto-1400x1400.png',
-      coverUrlInfo: 'https://www.edu.balta.lat/web/image/415-8ae27244/media.png',
-      title: 'El populismo y la democracia',
-      detailUrl: '#',
-      author: "Jesús Huerta de Soto",
-      text: "No disponible",
-      allowDownload: true
+  function refs() {
+    els = {
+      root: $("#mp-root"),
+      mini: $("#mp-mini"),
+      miniCover: $("#mp-mini-cover"),
+      miniTitle: $("#mp-mini-title"),
+      miniAuthor: $("#mp-mini-author"),
+      miniPlay: $("#mp-mini-play"),
+      miniPrev: $("#mp-mini-prev"),
+      miniNext: $("#mp-mini-next"),
+      miniExpand: $("#mp-mini-expand"),
+      miniInfo: $("#mp-mini-info"),
+      miniFill: $("#mp-mini-fill"),
+      miniBuf: $("#mp-mini-buf"),
+      miniProg: $("#mp-mini-prog"),
+      exp: $("#mp-exp"),
+      expCover: $("#mp-exp-cover"),
+      expVideo: $("#mp-exp-video"),
+      expTitle: $("#mp-exp-title"),
+      expAuthor: $("#mp-exp-author"),
+      expSubs: $("#mp-exp-subs"),
+      expVSubs: $("#mp-exp-vsubs"),
+      collapse: $("#mp-collapse"),
+      play: $("#mp-play"),
+      prev: $("#mp-prev"),
+      next: $("#mp-next"),
+      shuf: $("#mp-shuf"),
+      rep: $("#mp-rep"),
+      seek: $("#mp-seek"),
+      seekFill: $("#mp-seek-fill"),
+      seekBuf: $("#mp-seek-buf"),
+      seekThumb: $("#mp-seek-thumb"),
+      curTime: $("#mp-cur-time"),
+      durTime: $("#mp-dur-time"),
+      bg: $("#mp-bg"),
+      modeSwitch: $("#mp-mode-switch"),
+      subBtn: $("#mp-sub-btn"),
+      volBtn: $("#mp-vol-btn"),
+      volBar: $("#mp-vol-bar"),
+      volFill: $("#mp-vol-fill"),
+      dlBtn: $("#mp-btn-dl"),
+      btnQueue: $("#mp-btn-queue"),
+      btnSpeed: $("#mp-btn-speed"),
+      btnTimer: $("#mp-btn-timer"),
+      btnShare: $("#mp-btn-share"),
+      panelQueue: $("#mp-panel-queue"),
+      panelSpeed: $("#mp-panel-speed"),
+      panelTimer: $("#mp-panel-timer"),
+      panelShare: $("#mp-panel-share"),
+      queueList: $("#mp-queue-list"),
+      speedBody: $("#mp-speed-body"),
+      timerBody: $("#mp-timer-body"),
+      shareBody: $("#mp-share-body"),
+      expContent: $("#mp-exp-content"),
     };
-    loadMedia(programa.mediaUrl, programa.mediaType, programa.coverUrlContainer, programa.coverUrlInfo, programa.title, programa.detailUrl, programa.author, [], programa.text, programa.allowDownload);
-    showExpanded();
-    togglePlayPause(true);
-    throttledSaveState();
-  });
-  repeatBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    repeatBtn.classList.add('active');
-    setTimeout(() => repeatBtn.classList.remove('active'), 200);
-    repeatMode = (repeatMode + 1) % 3;
-    mediaElement.loop = repeatMode === 2;
-    updateRepeatButton();
-    throttledSaveState();
-  });
-  addToPlaylistBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    addToPlaylistBtn.classList.add('active');
-    setTimeout(() => addToPlaylistBtn.classList.remove('active'), 200);
-    if (currentMedia && !playlist.some(item => item.mediaUrl === currentMedia.mediaUrl)) {
-      playlist.push(currentMedia);
-      localStorage.setItem('playlist', JSON.stringify(playlist));
-      updatePlaylist();
-      updateAddButton();
-    } else if (currentMedia) {
-      const index = playlist.findIndex(item => item.mediaUrl === currentMedia.mediaUrl);
-      if (index > -1) {
-        playlist.splice(index, 1);
-        localStorage.setItem('playlist', JSON.stringify(playlist));
-        updatePlaylist();
-        updateAddButton();
-      }
+    audioEl = $("#mp-audio");
+    videoEl = els.expVideo;
+  }
+
+  /* ── Active media element ──────────────────────────────── */
+  function activeMedia() {
+    return S.mode === "video" && S.mediaVideo ? videoEl : audioEl;
+  }
+
+  /* ── UI Update helpers ─────────────────────────────────── */
+  function updateBg() {
+    const c = S.bgColor || "#111";
+    els.bg.style.background = `linear-gradient(180deg, ${c} 0%, ${darken(c,.25)} 100%)`;
+    els.mini.style.background = `linear-gradient(90deg, ${darken(c,.35)} 0%, ${darken(c,.2)} 100%)`;
+    const tc = textColor(c);
+    els.exp.style.color = tc;
+    els.mini.style.color = tc;
+    // Play button contrast
+    els.play.style.background = tc === "#fff" ? "#fff" : "#111";
+    els.play.style.color = tc === "#fff" ? "#000" : "#fff";
+  }
+
+  function updateMiniInfo() {
+    els.miniCover.src = S.coverUrl || "";
+    els.miniTitle.textContent = S.title;
+    els.miniAuthor.textContent = S.author;
+    els.expCover.src = S.coverUrl || "";
+    els.expTitle.textContent = S.title;
+    els.expAuthor.textContent = S.author;
+  }
+
+  function updatePlayBtn() {
+    const ic = S.playing ? ICO.pause : ICO.play;
+    els.play.innerHTML = `<span class="mp-ico" style="width:28px;height:28px">${ic}</span>`;
+    els.miniPlay.innerHTML = `<span class="mp-ico" style="width:22px;height:22px">${ic}</span>`;
+  }
+
+  function updateProgress() {
+    const pct = S.duration ? (S.currentTime / S.duration) * 100 : 0;
+    els.seekFill.style.width = pct + "%";
+    els.seekThumb.style.left = pct + "%";
+    els.miniFill.style.width = pct + "%";
+    els.curTime.textContent = fmt(S.currentTime);
+    els.durTime.textContent = fmt(S.duration);
+    // Buffered
+    const media = activeMedia();
+    if (media && media.buffered && media.buffered.length > 0) {
+      const buf = (media.buffered.end(media.buffered.length - 1) / (S.duration || 1)) * 100;
+      els.seekBuf.style.width = buf + "%";
+      els.miniBuf.style.width = buf + "%";
+    }
+  }
+
+  function updateMode() {
+    const hasAudio = !!S.mediaUrl;
+    const hasVideo = !!S.mediaVideo;
+    els.modeSwitch.style.display = (hasAudio && hasVideo) ? "flex" : "none";
+    $$(".mp-mode-opt", els.modeSwitch).forEach(b => {
+      b.classList.toggle("active", b.dataset.mode === S.mode);
+    });
+    if (S.mode === "video" && hasVideo) {
+      els.expCover.style.display = "none";
+      videoEl.style.display = "block";
+      els.expSubs.classList.remove("audio-mode");
     } else {
-      alert('No hay episodio cargado.');
+      els.expCover.style.display = S.subtitlesOn && S.subtitlesUrl ? "none" : "block";
+      videoEl.style.display = "none";
+      if (S.subtitlesOn && S.subtitlesUrl) {
+        els.expSubs.classList.add("audio-mode");
+      }
     }
-    throttledSaveState();
-  });
-  likesBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggleLikes();
-  });
-  colaBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    togglePanel('cola');
-  });
-  detallesBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    togglePanel('detalles');
-  });
-  bibliotecaBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    togglePanel('biblioteca');
-  });
-  linkCola.addEventListener('click', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    togglePanel('cola');
-  });
-  linkCola.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    togglePanel('cola');
-  });
-  linkDetalles.addEventListener('click', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    togglePanel('detalles');
-  });
-  linkDetalles.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    togglePanel('detalles');
-  });
-  linkBiblioteca.addEventListener('click', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    togglePanel('biblioteca');
-  });
-  linkBiblioteca.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    togglePanel('biblioteca');
-  });
-  closePanelBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    togglePanel();
-  });
-  togglePanelHeightBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    togglePanelHeight();
-  });
-  tabCola.addEventListener('click', (e) => {
-    e.stopPropagation();
-    switchTab('cola');
-  });
-  tabDetalles.addEventListener('click', (e) => {
-    e.stopPropagation();
-    switchTab('detalles');
-  });
-  tabBiblioteca.addEventListener('click', (e) => {
-    e.stopPropagation();
-    switchTab('biblioteca');
-  });
-  tabVelocidad.addEventListener('click', (e) => {
-    e.stopPropagation();
-    switchTab('velocidad');
-  });
-  tabTemporizador.addEventListener('click', (e) => {
-    e.stopPropagation();
-    switchTab('temporizador');
-  });
-  viewAllLikes.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggleLikesView();
-  });
-  playUserPlaylistBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    userPlaylistAutoPlay = !userPlaylistAutoPlay;
-    playUserPlaylistBtn.classList.toggle('active', userPlaylistAutoPlay);
-    if (userPlaylistAutoPlay && playlist.length > 0) {
-      activeList = 'playlist';
-      currentIndex = 0;
-      const item = playlist[currentIndex];
-      loadMedia(item.mediaUrl, item.mediaType, item.coverUrlContainer, item.coverUrlInfo, item.title, item.detailUrl, item.author, playlist, item.text, item.allowDownload);
-      togglePlayPause(true);
-    } else if (!userPlaylistAutoPlay) {
-      activeList = 'next';
-    }
-    throttledSaveState();
-  });
-  mediaElement.addEventListener('volumechange', checkMute);
-  rewindExpanded.addEventListener('click', (e) => {
-    e.stopPropagation();
-    rewind();
-  });
-  rewindExpanded.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    rewind();
-  });
-  forwardExpanded.addEventListener('click', (e) => {
-    e.stopPropagation();
-    forward();
-  });
-  forwardExpanded.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    forward();
-  });
-  previousExpanded.addEventListener('click', (e) => {
-    e.stopPropagation();
-    previous();
-  });
-  previousExpanded.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    previous();
-  });
-  nextExpanded.addEventListener('click', (e) => {
-    e.stopPropagation();
-    next();
-  });
-  nextExpanded.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    next();
-  });
-  playPauseExpanded.addEventListener('click', (e) => {
-    e.stopPropagation();
-    togglePlayPause();
-  });
-  playPauseExpanded.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    togglePlayPause();
-  });
-  rewindMinimized.addEventListener('click', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    rewind();
-  });
-  rewindMinimized.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    rewind();
-  });
-  forwardMinimized.addEventListener('click', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    forward();
-  });
-  forwardMinimized.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    forward();
-  });
-  playPauseMinimized.addEventListener('click', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    togglePlayPause();
-  });
-  playPauseMinimized.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    togglePlayPause();
-  });
+    updateSubtitles();
+  }
 
-  // Drag events for progress bars
-  progressContainerExpanded.addEventListener('mousedown', (e) => {
-    isDraggingExpanded = true;
-    progressContainerExpanded.classList.add('dragging');
-    updateProgressDrag(e.clientX, progressContainerExpanded, progressBarExpanded);
-    e.stopPropagation();
-  });
-  document.addEventListener('mousemove', (e) => {
-    if (isDraggingExpanded) {
-      updateProgressDrag(e.clientX, progressContainerExpanded, progressBarExpanded);
-    }
-  });
-  document.addEventListener('mouseup', () => {
-    if (isDraggingExpanded) {
-      isDraggingExpanded = false;
-      progressContainerExpanded.classList.remove('dragging');
-    }
-  });
-  progressContainerExpanded.addEventListener('touchstart', (e) => {
-    isDraggingExpanded = true;
-    progressContainerExpanded.classList.add('dragging');
-    updateProgressDrag(e.touches[0].clientX, progressContainerExpanded, progressBarExpanded);
-    e.preventDefault();
-    e.stopPropagation();
-  });
-  document.addEventListener('touchmove', (e) => {
-    if (isDraggingExpanded) {
-      updateProgressDrag(e.touches[0].clientX, progressContainerExpanded, progressBarExpanded);
-      e.preventDefault();
-    }
-  });
-  document.addEventListener('touchend', () => {
-    if (isDraggingExpanded) {
-      isDraggingExpanded = false;
-      progressContainerExpanded.classList.remove('dragging');
-    }
-  });
-
-  progressContainerMinimized.addEventListener('mousedown', (e) => {
-    isDraggingMinimized = true;
-    progressContainerMinimized.classList.add('dragging');
-    updateProgressDrag(e.clientX, progressContainerMinimized, progressBarMinimized);
-    e.stopPropagation();
-  });
-  document.addEventListener('mousemove', (e) => {
-    if (isDraggingMinimized) {
-      updateProgressDrag(e.clientX, progressContainerMinimized, progressBarMinimized);
-    }
-  });
-  document.addEventListener('mouseup', () => {
-    if (isDraggingMinimized) {
-      isDraggingMinimized = false;
-      progressContainerMinimized.classList.remove('dragging');
-    }
-  });
-  progressContainerMinimized.addEventListener('touchstart', (e) => {
-    isDraggingMinimized = true;
-    progressContainerMinimized.classList.add('dragging');
-    updateProgressDrag(e.touches[0].clientX, progressContainerMinimized, progressBarMinimized);
-    e.preventDefault();
-    e.stopPropagation();
-  });
-  document.addEventListener('touchmove', (e) => {
-    if (isDraggingMinimized) {
-      updateProgressDrag(e.touches[0].clientX, progressContainerMinimized, progressBarMinimized);
-      e.preventDefault();
-    }
-  });
-  document.addEventListener('touchend', () => {
-    if (isDraggingMinimized) {
-      isDraggingMinimized = false;
-      progressContainerMinimized.classList.remove('dragging');
-    }
-  });
-
-  progressContainerFullscreen.addEventListener('mousedown', (e) => {
-    isDraggingFullscreen = true;
-    updateProgressDrag(e.clientX, progressContainerFullscreen, progressBarFullscreen);
-  });
-  progressContainerFullscreen.addEventListener('touchstart', (e) => {
-    isDraggingFullscreen = true;
-    updateProgressDrag(e.touches[0].clientX, progressContainerFullscreen, progressBarFullscreen);
-    e.preventDefault();
-  });
-  document.addEventListener('mousemove', (e) => {
-    if (isDraggingFullscreen) {
-      updateProgressDrag(e.clientX, progressContainerFullscreen, progressBarFullscreen);
-    }
-  });
-  document.addEventListener('touchmove', (e) => {
-    if (isDraggingFullscreen) {
-      updateProgressDrag(e.touches[0].clientX, progressContainerFullscreen, progressBarFullscreen);
-      e.preventDefault();
-    }
-  });
-  document.addEventListener('mouseup', () => {
-    if (isDraggingFullscreen) isDraggingFullscreen = false;
-  });
-  document.addEventListener('touchend', () => {
-    if (isDraggingFullscreen) isDraggingFullscreen = false;
-  });
-
-  // Swipe to close/expand
-  playerExpanded.addEventListener('touchstart', (e) => {
-    const target = e.target;
-    if (target.closest('.media-container') || target.closest('.controls') || target.closest('.video-progress-container-expanded') || target.closest('.action-buttons') || target.closest('.episode-info') || target.closest('.panel-container') || target.closest('button')) {
+  function updateSubtitles() {
+    els.subBtn.classList.toggle("active", S.subtitlesOn);
+    if (!S.subtitlesOn || !S.subtitlesUrl) {
+      els.expSubs.style.display = "none";
+      els.expVSubs.style.display = "none";
+      if (S.mode === "audio") els.expCover.style.display = "block";
       return;
     }
-    touchStartY = e.touches[0].clientY;
-    isSwiping = true;
-  });
-  playerExpanded.addEventListener('touchmove', (e) => {
-    if (!isSwiping) return;
-    touchEndY = e.touches[0].clientY;
-  });
-  playerExpanded.addEventListener('touchend', (e) => {
-    if (!isSwiping) return;
-    const deltaY = touchStartY - touchEndY;
-    if (deltaY > swipeThreshold) {
-      showMinimized();
+    if (S.mode === "audio") {
+      els.expSubs.style.display = "block";
+      els.expVSubs.style.display = "none";
+      els.expCover.style.display = "none";
+      els.expSubs.classList.add("audio-mode");
+    } else {
+      els.expSubs.style.display = "none";
+      els.expVSubs.style.display = "block";
     }
-    isSwiping = false;
-  });
+  }
 
-  playerMinimized.addEventListener('touchstart', (e) => {
-    if (e.target.closest('.minimized-controls') || progressContainerMinimized.contains(e.target)) {
+  /* ── Speed panel ───────────────────────────────────────── */
+  function buildSpeedPanel() {
+    const speeds = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 3];
+    els.speedBody.innerHTML = '<div class="mp-speed-grid">' + speeds.map(s =>
+      `<div class="mp-speed-opt${S.speed===s?" active":""}" data-speed="${s}">${s}x</div>`
+    ).join("") + '</div>';
+    $$(".mp-speed-opt", els.speedBody).forEach(el => {
+      el.onclick = () => {
+        S.speed = parseFloat(el.dataset.speed);
+        activeMedia().playbackRate = S.speed;
+        buildSpeedPanel();
+      };
+    });
+  }
+
+  /* ── Timer panel ───────────────────────────────────────── */
+  function buildTimerPanel() {
+    const opts = [5,10,15,30,45,60,90,120];
+    let html = '<div class="mp-timer-grid">' + opts.map(m =>
+      `<div class="mp-timer-opt${S.sleepMinutes===m?" active":""}" data-min="${m}">${m} min</div>`
+    ).join("") + `<div class="mp-timer-opt${!S.sleepMinutes?" active":""}" data-min="0">Apagar</div></div>`;
+    if (S.sleepTimer) {
+      const rem = Math.max(0, S.sleepMinutes * 60 - (Date.now() - S._timerStart) / 1000);
+      html += `<div class="mp-timer-status">⏱ Quedan ${fmt(rem)}</div>`;
+    }
+    els.timerBody.innerHTML = html;
+    $$(".mp-timer-opt", els.timerBody).forEach(el => {
+      el.onclick = () => {
+        const m = parseInt(el.dataset.min);
+        if (S.sleepTimer) clearTimeout(S.sleepTimer);
+        S.sleepTimer = null;
+        S.sleepMinutes = m;
+        if (m > 0) {
+          S._timerStart = Date.now();
+          S.sleepTimer = setTimeout(() => {
+            pauseMedia();
+            S.sleepTimer = null;
+            S.sleepMinutes = 0;
+          }, m * 60 * 1000);
+        }
+        buildTimerPanel();
+      };
+    });
+  }
+
+  /* ── Share panel ───────────────────────────────────────── */
+  function buildSharePanel() {
+    const url = S.detailUrl ? window.location.origin + S.detailUrl : window.location.href;
+    const t = encodeURIComponent(S.title + " — " + S.author);
+    const u = encodeURIComponent(url);
+    const shares = [
+      { name: "WhatsApp", color: "#25D366", url: `https://wa.me/?text=${t}%20${u}`, icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>` },
+      { name: "Twitter", color: "#000", url: `https://twitter.com/intent/tweet?text=${t}&url=${u}`, icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>` },
+      { name: "Facebook", color: "#1877F2", url: `https://www.facebook.com/sharer/sharer.php?u=${u}`, icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>` },
+      { name: "Telegram", color: "#0088cc", url: `https://t.me/share/url?url=${u}&text=${t}`, icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>` },
+      { name: "Copiar", color: "#555", url: null, icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>` },
+    ];
+    els.shareBody.innerHTML = '<div class="mp-share-grid">' + shares.map(s =>
+      `<button class="mp-share-btn" data-url="${s.url||""}" data-name="${s.name}" style="border:1px solid rgba(255,255,255,.1)">${s.icon}<span>${s.name}</span></button>`
+    ).join("") + '</div>';
+    $$(".mp-share-btn", els.shareBody).forEach(btn => {
+      btn.onclick = () => {
+        if (btn.dataset.name === "Copiar") {
+          navigator.clipboard.writeText(url).then(() => {
+            btn.querySelector("span").textContent = "¡Copiado!";
+            setTimeout(() => btn.querySelector("span").textContent = "Copiar", 2000);
+          });
+        } else {
+          window.open(btn.dataset.url, "_blank", "width=600,height=400");
+        }
+      };
+    });
+  }
+
+  /* ── Queue panel ───────────────────────────────────────── */
+  function buildQueuePanel() {
+    if (!S.queue || !S.queue.length) {
+      els.queueList.innerHTML = '<p style="opacity:.5;padding:20px;text-align:center">No hay episodios en cola.</p>';
       return;
     }
-    touchStartY = e.touches[0].clientY;
-    isSwiping = true;
-  });
-  playerMinimized.addEventListener('touchmove', (e) => {
-    if (!isSwiping) return;
-    touchEndY = e.touches[0].clientY;
-  });
-  playerMinimized.addEventListener('touchend', (e) => {
-    if (!isSwiping) return;
-    const deltaY = touchStartY - touchEndY;
-    if (deltaY > swipeThreshold) {
-      showExpanded();
-    }
-    isSwiping = false;
-  });
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && !isAudioMode && currentMedia?.mediaType === 'video') {
-      mediaElement.pause();
-      updateIcons(false);
-      updateAllItemIcons(false);
-      updateOpenPlayerButton(false);
-    }
-  });
-
-  panelContainer.addEventListener('click', (e) => {
-    e.stopPropagation();
-  });
-  panelContainer.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-  });
-
-  window.addEventListener('popstate', () => {
-    throttledSaveState();
-    showMinimized();
-  });
-
-  window.addEventListener('beforeunload', throttledSaveState);
-
-  // --- Estilos CSS (inyectados directamente) ---
-  const style = document.createElement('style');
-  style.textContent = `
-    /* Reset y estilos base */
-    #playerUniversal * {
-      box-sizing: border-box;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    #playerUniversal {
-      font-family: Arial, sans-serif;
-      color: white;
-    }
-    .player-universal {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      z-index: 1001;
-    }
-    /* Reproductor expandido */
-    .player-expanded {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      width: 100%;
-      height: 100vh;
-      padding: max(12px, env(safe-area-inset-top)) 10px max(20px, env(safe-area-inset-bottom)) 10px;
-      background: #6a8caf; /* color dinámico */
-      z-index: 2147483647;
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      position: relative;
-    }
-    /* Degradado oscuro desde abajo hacia la mitad */
-    .player-expanded::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 50%;
-      background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%);
-      pointer-events: none;
-      z-index: 1;
-    }
-    .content-wrapper {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      max-width: 500px;
-      margin: 0 auto;
-      flex-grow: 1;
-      position: relative;
-      z-index: 2;
-    }
-    .complex2, .complex3 {
-      width: 100%;
-    }
-    /* Contenedor multimedia siempre cuadrado */
-    .media-container {
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      background: #000;
-      position: relative;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-radius: 10px;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .media-container video, .media-container img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      z-index: 1000;
-      border-radius: 10px;
-    }
-    .overlay-gradient {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.3) 100%);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 1001;
-    }
-    .media-container.show-controls .overlay-gradient { opacity: 1; }
-    /* Reproductor minimizado */
-    .player-minimized {
-      background: #6a8caf; /* color dinámico */
-      height: 70px;
-      display: flex;
-      align-items: center;
-      padding: 10px;
-      justify-content: space-between;
-      box-sizing: border-box;
-      position: relative;
-      cursor: pointer;
-      width: 100%;
-      border-top-left-radius: 12px;
-      border-top-right-radius: 12px;
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
-    }
-    .minimized-content {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      height: 100%;
-    }
-    .minimized-cover {
-      flex: 0 0 50px;
-      margin-right: 10px;
-    }
-    .minimized-cover img {
-      width: 50px;
-      height: 50px;
-      object-fit: cover;
-      border-radius: 5px;
-    }
-    .minimized-title-container {
-      flex: 1;
-      overflow: hidden;
-      white-space: nowrap;
-    }
-    .minimized-title {
-      font-size: 16px;
-      font-weight: bold;
-      color: white;
-    }
-    .minimized-controls {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .minimized-controls button {
-      background: transparent;
-      border: none;
-      padding: 0;
-      cursor: pointer;
-    }
-    .minimized-controls img {
-      width: 24px;
-      height: 24px;
-    }
-    /* Barras de progreso */
-    .video-progress-container-expanded,
-    .video-progress-container-minimized,
-    .video-progress-container-fullscreen {
-      width: 100%;
-      height: 6px;
-      background: #555;
-      border-radius: 3px;
-      position: relative;
-      cursor: pointer;
-      transition: height 0.2s ease;
-    }
-    .video-progress-container-expanded:hover,
-    .video-progress-container-minimized:hover,
-    .video-progress-container-fullscreen:hover {
-      height: 8px;
-    }
-    .progress-bar-expanded,
-    .progress-bar-minimized,
-    .progress-bar-fullscreen {
-      height: 100%;
-      background: #ff0000;
-      width: 0;
-      border-radius: 3px;
-      position: relative;
-    }
-    .progress-knob-expanded,
-    .progress-knob-minimized,
-    .progress-knob-fullscreen {
-      position: absolute;
-      right: -8px;
-      top: 50%;
-      width: 16px;
-      height: 16px;
-      background: #ff0000;
-      border-radius: 50%;
-      transform: translateY(-50%) scale(0);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      transition: transform 0.2s ease, opacity 0.2s ease;
-      opacity: 0;
-      pointer-events: none;
-    }
-    .video-progress-container-expanded:hover .progress-knob-expanded,
-    .video-progress-container-expanded.dragging .progress-knob-expanded,
-    .video-progress-container-minimized:hover .progress-knob-minimized,
-    .video-progress-container-minimized.dragging .progress-knob-minimized,
-    .video-progress-container-fullscreen:hover .progress-knob-fullscreen,
-    .video-progress-container-fullscreen.dragging .progress-knob-fullscreen {
-      transform: translateY(-50%) scale(1);
-      opacity: 1;
-    }
-    /* Panel */
-    .panel-container {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 60vh;
-      background: rgba(0, 0, 0, 0.9);
-      z-index: 1004;
-      display: none;
-      flex-direction: column;
-      padding: 10px;
-      box-sizing: border-box;
-      overflow: hidden;
-    }
-    .panel-container.full-height {
-      height: 100vh;
-    }
-    .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 20px 20px 10px 20px;
-      position: relative;
-      z-index: 1004;
-    }
-    .tabs {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-    .tabs a {
-      color: white;
-      font-size: 20px;
-      font-weight: bold;
-      text-decoration: none;
-      padding: 8px 12px;
-      border-radius: 8px;
-      transition: background 0.2s;
-      cursor: pointer;
-    }
-    .tabs a.active {
-      color: #ff0000;
-      background: rgba(255, 0, 0, 0.2);
-    }
-    .panel-controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    #togglePanelHeightBtn,
-    #closePanelBtn {
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(10px);
-      border-radius: 50%;
-      width: 44px;
-      height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: none;
-      cursor: pointer;
-      transition: transform 0.2s ease;
-    }
-    #togglePanelHeightBtn:hover,
-    #closePanelBtn:hover {
-      transform: scale(1.1);
-    }
-    #togglePanelHeightBtn img,
-    #closePanelBtn img {
-      width: 28px;
-      height: 28px;
-    }
-    /* Ajustes para móvil (opcional, puedes eliminarlo si quieres que sea idéntico) */
-    @media (max-width: 600px) {
-      .panel-header {
-        padding: 10px 10px 5px 10px;
-      }
-      .tabs {
-        gap: 10px;
-      }
-      .tabs a {
-        font-size: 14px;
-        padding: 6px 8px;
-      }
-      .panel-controls button {
-        width: 36px;
-        height: 36px;
-      }
-      .panel-controls button img {
-        width: 20px;
-        height: 20px;
-      }
-    }
-    /* Otros estilos (se mantienen igual) */
-    .top-controls {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-      margin-bottom: 10px;
-      z-index: 2;
-    }
-    .media-mode-toggle {
-      background: #444;
-      border: none;
-      border-radius: 20px;
-      padding: 8px 12px;
-      color: white;
-      font-size: 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      white-space: nowrap;
-      transition: all 0.3s ease;
-    }
-    .media-mode-toggle.disabled {
-      opacity: 0.5;
-      background: #333;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
-    .minimize-btn {
-      background: rgba(0, 0, 0, 0.5);
-      border: none;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 1003;
-    }
-    .minimize-btn img { width: 24px; height: 24px; }
-    .episode-info {
-      display: flex;
-      align-items: center;
-      color: white;
-      background: transparent;
-      margin: 10px 0 5px 0;
-      cursor: pointer;
-      width: 100%;
-      position: relative;
-    }
-    .left-section { flex: 0 0 50px; }
-    .center-section { flex: 1; overflow: hidden; padding: 0 10px; }
-    .right-section { flex: 0 0 50px; text-align: right; }
-    .episode-info img { width: 40px; height: 40px; z-index: 3; }
-    .episode-info .center-section span { font-size: 18px; font-weight: bold; white-space: nowrap; color: white; display: block; }
-    .episode-info .center-section .author { font-size: 14px; font-weight: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: white; }
-    .controls {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 100%;
-      margin: 2px 0;
-      gap: 5px;
-    }
-    .controls button, .minimized-controls button, #minimizeBtn {
-      background: transparent;
-      border: none;
-      padding: 0;
-      margin: 0;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-    }
-    .controls img, .minimized-controls img, .action-buttons img { width: 24px; height: 24px; user-select: none; }
-    #rewindExpanded img, #forwardExpanded img { width: 35px; height: 35px; }
-    #previousExpanded img, #nextExpanded img { width: 33px; height: 33px; }
-    #playPauseExpanded img { width: 49px; height: 49px; }
-    .time-info {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-      color: white;
-      margin: 0 0 5px 0;
-      font-size: 12px;
-    }
-    .action-buttons-container {
-      width: 100%;
-      overflow-x: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      margin-bottom: 5px;
-    }
-    .action-buttons {
-      display: flex;
-      gap: 10px;
-      padding: 5px 0;
-    }
-    .action-btn {
-      background: #444;
-      color: white;
-      border: none;
-      border-radius: 15px;
-      padding: 6px 8px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      white-space: nowrap;
-      min-width: fit-content;
-      transition: transform 0.2s ease;
-    }
-    .action-btn:active { transform: scale(0.95); }
-    .action-btn img { width: 15px; height: 15px; }
-    .action-btn.disabled { opacity: 0.5; cursor: not-allowed; }
-    .full-width-btn {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      background: #666;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 6px;
-      cursor: pointer;
-    }
-    .full-width-btn img { width: 20px; height: 20px; }
-    .full-width-btn span { margin-left: 10px; font-size: 16px; }
-    .tabs-text {
-      width: 100%;
-      display: flex;
-      justify-content: space-around;
-      margin-top: 5px;
-      margin-bottom: 5px;
-    }
-    .tabs-text a {
-      color: #edebeb;
-      font-weight: bold;
-      text-decoration: none;
-      cursor: pointer;
-      font-size: 14px;
-      padding: 8px 12px;
-      border-radius: 8px;
-    }
-    .speed-container, .timer-container {
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      cursor: pointer;
-    }
-    .speed-container.active, .timer-container.active { background: #ff0000; border-radius: 5px; padding: 2px; }
-    .fullscreen-controls {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: none;
-      flex-direction: column;
-      justify-content: space-between;
-      z-index: 1002;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 20%, transparent 30%, transparent 70%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.7) 100%);
-    }
-    .fullscreen-title { color: white; font-size: 18px; font-weight: bold; text-align: center; padding: 10px; }
-    .fullscreen-center-controls {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 20px;
-      height: 100%;
-    }
-    .fullscreen-bottom-bar {
-      display: flex;
-      align-items: center;
-      padding: 10px;
-      background: transparent;
-    }
-    .volume-btn, .fullscreen-btn, .control-btn {
-      background: rgba(0,0,0,0.5);
-      border: none;
-      border-radius: 50%;
-      width: 48px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-    .mute-indicator {
-      position: absolute;
-      bottom: 20px;
-      right: 60px;
-      background: rgba(255,0,0,0.7);
-      color: white;
-      padding: 5px 10px;
-      border-radius: 5px;
-      z-index: 1003;
-    }
-    .seek-indicator-left, .seek-indicator-right {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(0,0,0,0.7);
-      padding: 10px;
-      border-radius: 5px;
-      color: white;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 1003;
-    }
-    .seek-indicator-left { left: 10px; }
-    .seek-indicator-right { right: 10px; }
-    .seek-indicator-left.show, .seek-indicator-right.show { opacity: 1; }
-    .timer-options {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      padding: 10px;
-    }
-    .timer-options button {
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 18px;
-      color: white;
-      border: none;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .timer-options button:nth-child(odd) { background: #444; }
-    .timer-options button:nth-child(even) { background: #555; }
-    .timer-options button.selected { background: #ff0000; }
-    #timerCountdown {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 15px;
-      padding: 20px;
-    }
-    #countdownDisplay { font-size: 48px; font-weight: bold; color: white; }
-    #deactivateTimer { background: white; color: #111; padding: 12px 20px; border-radius: 8px; font-size: 16px; border: none; cursor: pointer; }
-    #velocidadContent .options-panel {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 15px;
-      padding: 20px;
-    }
-    #currentSpeed { font-size: 32px; font-weight: bold; color: white; }
-    #speedSlider { width: 100%; height: 4px; background: #ccc; appearance: none; border-radius: 2px; cursor: pointer; }
-    #speedSlider::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; background: white; border-radius: 50%; border: 2px solid #ff0000; transition: transform 0.2s; }
-    #speedSlider::-webkit-slider-thumb:hover { transform: scale(1.2); }
-    .speed-labels { display: flex; justify-content: space-between; width: 100%; font-size: 14px; color: #ddd; }
-    .panel-content { flex-grow: 1; overflow-y: auto; }
-    .panel-section { display: none; }
-    .panel-section.active { display: block; }
-    .next-items, .recomendados-items { overflow-y: auto; }
-    .next-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 5px;
-      cursor: pointer;
-      border-bottom: 1px solid #555;
-      height: 50px;
-    }
-    .next-item:hover { background: #555; }
-    .next-item.active { background: #555; }
-    .next-item img.cover { width: 40px; height: 40px; margin-right: 10px; object-fit: cover; }
-    .next-item span { flex-grow: 1; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #edebeb; }
-    .next-item .item-controls { display: flex; gap: 5px; }
-    .next-item button { background: transparent; border: none; cursor: pointer; }
-    .next-item button img { width: 20px; height: 20px; }
-    .likes-view.carousel .likes-carousel { display: flex; overflow-x: auto; gap: 10px; scrollbar-width: none; }
-    .likes-view.grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 10px;
-      overflow-y: auto;
-    }
-    .likes-item {
-      flex: 0 0 100px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      cursor: pointer;
-      padding: 5px;
-      border-radius: 8px;
-    }
-    .likes-item img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; }
-    .likes-item span { color: #edebeb; font-size: 12px; text-align: center; margin-top: 5px; }
-    .playlist-items { overflow-y: auto; }
-    .playlist-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 5px;
-      cursor: pointer;
-      border-bottom: 1px solid #555;
-      height: 50px;
-    }
-    .playlist-item.active { background: #555; }
-    .playlist-item img.cover { width: 40px; height: 40px; margin-right: 10px; object-fit: cover; }
-    .playlist-item span { flex-grow: 1; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #edebeb; }
-    .playlist-item .item-controls { display: flex; gap: 8px; align-items: center; }
-    .playlist-item button { background: transparent; border: none; cursor: pointer; }
-    .playlist-item button img { width: 20px; height: 20px; }
-    .drag-handle { cursor: grab; }
-    .drag-handle img { width: 18px; height: 18px; opacity: 0.8; }
-    .separator { margin: 10px 0; }
-    .separator h4 { color: #edebeb; font-size: 16px; }
-    .text-content { overflow-y: auto; color: #edebeb; font-size: 14px; }
-    .no-items { color: #edebeb; text-align: center; margin-top: 20px; }
-    #playUserPlaylistBtn { background: #0c5db3; color: #edebeb; border: none; padding: 8px; border-radius: 5px; cursor: pointer; margin-top: 10px; width: 100%; }
-    #playUserPlaylistBtn.active { background: #006400; }
-  `;
-  document.head.appendChild(style);
-
-  // --- Funciones globales expuestas ---
-  window.togglePlayer = () => {
-    if (!currentMedia) {
-      const programa = window.PROGRAMA_DEL_DIA || {
-        mediaUrl: 'https://awscdn.podcasts.com/audio-vhhlggMJNysHnLYW8KXAQwu4w.mp3',
-        mediaType: 'audio',
-        coverUrlContainer: 'https://s3.amazonaws.com/podcasts-image-uploads/el-populismo-y-la-democracia-jesus-huerta-de-soto-1400x1400.png',
-        coverUrlInfo: 'https://www.edu.balta.lat/web/image/415-8ae27244/media.png',
-        title: 'El populismo y la democracia',
-        detailUrl: '#',
-        author: "Jesús Huerta de Soto",
-        text: "No disponible",
-        allowDownload: true
+    els.queueList.innerHTML = S.queue.map((ep, i) =>
+      `<div class="mp-queue-item${i===S.queueIndex?" active":""}" data-qi="${i}">
+        <img class="mp-queue-img" src="${ep.coverUrl||""}" alt="" />
+        <div class="mp-queue-info">
+          <div class="mp-queue-title">${ep.title||""}</div>
+          <div class="mp-queue-author">${ep.author||""}</div>
+        </div>
+      </div>`
+    ).join("");
+    $$(".mp-queue-item", els.queueList).forEach(el => {
+      el.onclick = () => {
+        const idx = parseInt(el.dataset.qi);
+        playQueueItem(idx);
       };
-      loadMedia(programa.mediaUrl, programa.mediaType, programa.coverUrlContainer, programa.coverUrlInfo, programa.title, programa.detailUrl, programa.author, [], programa.text, programa.allowDownload);
-      togglePlayPause(true);
-      showExpanded();
-      throttledSaveState();
+    });
+  }
+
+  function playQueueItem(idx) {
+    if (!S.queue[idx]) return;
+    const ep = S.queue[idx];
+    S.queueIndex = idx;
+    loadEpisode(ep.mediaUrl, ep.mediaVideo, ep.initialMode || "audio", ep.coverUrl, ep.coverInfo, ep.title, ep.detailUrl, ep.author, S.queue, ep.text, ep.subtitlesUrl, ep.bgColor, ep.allowDownload);
+    playMedia();
+    buildQueuePanel();
+  }
+
+  /* ── Media control ─────────────────────────────────────── */
+  function loadEpisode(mediaUrl, mediaVideo, initialMode, coverUrl, coverInfo, title, detailUrl, author, queue, text, subtitlesUrl, bgColor, allowDownload) {
+    // Pause current
+    pauseMedia();
+
+    S.mediaUrl = mediaUrl || "";
+    S.mediaVideo = mediaVideo || "";
+    S.coverUrl = coverUrl || coverInfo || "";
+    S.coverInfo = coverInfo || coverUrl || "";
+    S.title = title || "";
+    S.detailUrl = detailUrl || "";
+    S.author = author || "";
+    S.queue = queue || [];
+    S.text = text || "";
+    S.subtitlesUrl = subtitlesUrl || "";
+    S.bgColor = bgColor || "#111";
+    S.allowDownload = allowDownload === true || allowDownload === "true";
+    S.subtitlesOn = false;
+    S.currentTime = 0;
+    S.duration = 0;
+
+    // Determine mode
+    const hasAudio = !!S.mediaUrl;
+    const hasVideo = !!S.mediaVideo;
+    if (initialMode === "video" && hasVideo) {
+      S.mode = "video";
+    } else if (hasAudio) {
+      S.mode = "audio";
+    } else if (hasVideo) {
+      S.mode = "video";
     } else {
-      showExpanded();
+      S.mode = "audio";
     }
-  };
 
-  window.playEpisode = (mediaUrl, mediaType = 'audio', coverUrlContainer = '', coverUrlInfo = '', title = '', detailUrl = '', author = 'Roberto', next = [], text = '', allowDownload = true) => {
-    if (currentMedia && currentMedia.mediaUrl === mediaUrl && !mediaElement.paused) {
-      togglePlayPause();
+    // Set sources
+    if (hasAudio) audioEl.src = S.mediaUrl;
+    if (hasVideo) videoEl.src = S.mediaVideo;
+
+    // Apply speed
+    audioEl.playbackRate = S.speed;
+    videoEl.playbackRate = S.speed;
+
+    // Update UI
+    updateBg();
+    updateMiniInfo();
+    updatePlayBtn();
+    updateMode();
+    updateProgress();
+
+    // Show mini
+    els.mini.classList.add("visible");
+
+    // Download
+    els.dlBtn.style.display = S.allowDownload ? "block" : "none";
+
+    // Load subtitles
+    if (S.subtitlesUrl) loadSubtitles(S.subtitlesUrl);
+  }
+
+  function playMedia() {
+    const media = activeMedia();
+    if (!media || !media.src) return;
+    media.play().catch(() => {});
+    S.playing = true;
+    updatePlayBtn();
+    // Sync: if video mode, mute audio; if audio mode, pause video
+    syncMediaStreams();
+  }
+
+  function pauseMedia() {
+    audioEl.pause();
+    videoEl.pause();
+    S.playing = false;
+    updatePlayBtn();
+  }
+
+  function togglePlay() {
+    S.playing ? pauseMedia() : playMedia();
+  }
+
+  function syncMediaStreams() {
+    if (S.mode === "video" && S.mediaVideo) {
+      audioEl.pause();
+      audioEl.muted = true;
+      videoEl.muted = S.muted;
+      videoEl.volume = S.volume;
+      if (S.playing) videoEl.play().catch(() => {});
     } else {
-      loadMedia(mediaUrl, mediaType, coverUrlContainer, coverUrlInfo, title, detailUrl, author, next, text, allowDownload);
-      togglePlayPause(true);
-      throttledSaveState();
+      videoEl.pause();
+      videoEl.muted = true;
+      audioEl.muted = S.muted;
+      audioEl.volume = S.volume;
+      if (S.playing) audioEl.play().catch(() => {});
     }
-  };
+  }
 
-  window.playEpisodeExpanded = (mediaUrl, mediaType = 'audio', coverUrlContainer = '', coverUrlInfo = '', title = '', detailUrl = '', author = 'Roberto', next = [], text = '', allowDownload = true, bgColor = null) => {
-    if (bgColor) {
-      playerBgColor = bgColor;
-      applyBgColor();
+  function switchMode(mode) {
+    if (mode === S.mode) return;
+    const currentTime = activeMedia().currentTime || 0;
+    S.mode = mode;
+    const newMedia = activeMedia();
+    if (newMedia.src) {
+      newMedia.currentTime = currentTime;
     }
-    window.playEpisode(mediaUrl, mediaType, coverUrlContainer, coverUrlInfo, title, detailUrl, author, next, text, allowDownload);
-    showExpanded();
-  };
+    newMedia.playbackRate = S.speed;
+    syncMediaStreams();
+    updateMode();
+  }
 
-  window.playEpisodeMinimized = (mediaUrl, mediaType = 'audio', coverUrlContainer = '', coverUrlInfo = '', title = '', detailUrl = '', author = 'Roberto', next = [], text = '', allowDownload = true, bgColor = null) => {
-    if (bgColor) {
-      playerBgColor = bgColor;
-      applyBgColor();
+  function seekTo(pct) {
+    const media = activeMedia();
+    if (media && S.duration) {
+      media.currentTime = pct * S.duration;
+      S.currentTime = media.currentTime;
+      updateProgress();
     }
-    window.loadEpisode(
-      mediaUrl,
-      mediaType,
-      coverUrlContainer,
-      coverUrlInfo,
-      title,
-      detailUrl,
-      author,
-      next,
-      text,
-      allowDownload
-    );
-    togglePlayPause(true);
-    showMinimized();
-  };
+  }
 
-  window.loadEpisode = loadMedia;
+  function setVolume(v) {
+    S.volume = clamp(v, 0, 1);
+    S.muted = S.volume === 0;
+    activeMedia().volume = S.volume;
+    activeMedia().muted = S.muted;
+    els.volFill.style.width = (S.volume * 100) + "%";
+    els.volBtn.innerHTML = icon(S.muted ? "volMute" : "vol", 20);
+  }
 
-  window.setPlayerBgColor = (color) => {
-    playerBgColor = color;
-    applyBgColor();
-    throttledSaveState();
-  };
+  /* ── Subtitles (VTT/SRT) ─────────────────────────────── */
+  function loadSubtitles(url) {
+    S.subtitlesCues = [];
+    fetch(url).then(r => r.ok ? r.text() : "").then(txt => {
+      if (!txt) return;
+      // Parse simple VTT/SRT
+      const blocks = txt.split(/\n\s*\n/);
+      blocks.forEach(block => {
+        const lines = block.trim().split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          const m = lines[i].match(/(\d{1,2}:?\d{2}:\d{2}[.,]\d{3})\s*-->\s*(\d{1,2}:?\d{2}:\d{2}[.,]\d{3})/);
+          if (m) {
+            const start = parseTime(m[1]);
+            const end = parseTime(m[2]);
+            const text = lines.slice(i + 1).join(" ").replace(/<[^>]+>/g, "").trim();
+            if (text) S.subtitlesCues.push({ start, end, text });
+            break;
+          }
+        }
+      });
+    }).catch(() => {});
+  }
 
-  window.addToUserPlaylist = (obj) => {
-    if (!obj || !obj.mediaUrl) return false;
-    if (!playlist.some(p => p.mediaUrl === obj.mediaUrl)) {
-      playlist.unshift(obj);
-      localStorage.setItem('playlist', JSON.stringify(playlist));
-      if (typeof updatePlaylist === 'function') updatePlaylist();
-      if (typeof updateAddButton === 'function') updateAddButton();
-      return true;
+  function parseTime(str) {
+    str = str.replace(",", ".");
+    const parts = str.split(":");
+    if (parts.length === 3) return parseFloat(parts[0]) * 3600 + parseFloat(parts[1]) * 60 + parseFloat(parts[2]);
+    if (parts.length === 2) return parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
+    return parseFloat(str);
+  }
+
+  function getCurrentCue(time) {
+    for (const cue of S.subtitlesCues) {
+      if (time >= cue.start && time <= cue.end) return cue.text;
     }
-    return false;
+    return "";
+  }
+
+  /* ── Expand / Collapse ─────────────────────────────────── */
+  function expand() {
+    S.expanded = true;
+    els.exp.classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function collapse() {
+    S.expanded = false;
+    els.exp.classList.remove("open");
+    closeAllPanels();
+    document.body.style.overflow = "";
+  }
+
+  function togglePanel(name) {
+    const panels = ["queue", "speed", "timer", "share"];
+    panels.forEach(p => {
+      const el = els["panel" + p.charAt(0).toUpperCase() + p.slice(1)];
+      if (p === name && !el.classList.contains("open")) {
+        el.classList.add("open");
+        S.panelOpen = name;
+        if (p === "speed") buildSpeedPanel();
+        if (p === "timer") buildTimerPanel();
+        if (p === "share") buildSharePanel();
+        if (p === "queue") buildQueuePanel();
+      } else {
+        el.classList.remove("open");
+      }
+    });
+    if (S.panelOpen === name) S.panelOpen = null;
+  }
+
+  function closeAllPanels() {
+    ["Queue","Speed","Timer","Share"].forEach(n => {
+      els["panel"+n].classList.remove("open");
+    });
+    S.panelOpen = null;
+  }
+
+  /* ── Events ────────────────────────────────────────────── */
+  function bindEvents() {
+    // Mini
+    els.miniPlay.onclick = togglePlay;
+    els.miniExpand.onclick = expand;
+    els.miniInfo.onclick = expand;
+    els.miniCover.onclick = expand;
+    els.miniPrev.onclick = () => skip(-1);
+    els.miniNext.onclick = () => skip(1);
+
+    // Mini progress click
+    els.miniProg.onclick = (e) => {
+      const r = els.miniProg.getBoundingClientRect();
+      seekTo((e.clientX - r.left) / r.width);
+    };
+
+    // Expanded
+    els.collapse.onclick = collapse;
+    els.play.onclick = togglePlay;
+    els.prev.onclick = () => skip(-1);
+    els.next.onclick = () => skip(1);
+
+    // Seek
+    const seekHandler = (e) => {
+      const r = els.seek.getBoundingClientRect();
+      seekTo(clamp((e.clientX - r.left) / r.width, 0, 1));
+    };
+    els.seek.onmousedown = (e) => { S.seekDragging = true; seekHandler(e); };
+    document.addEventListener("mousemove", (e) => { if (S.seekDragging) seekHandler(e); });
+    document.addEventListener("mouseup", () => { S.seekDragging = false; });
+    // Touch
+    els.seek.ontouchstart = (e) => { S.seekDragging = true; seekHandler(e.touches[0]); };
+    document.addEventListener("touchmove", (e) => { if (S.seekDragging) seekHandler(e.touches[0]); });
+    document.addEventListener("touchend", () => { S.seekDragging = false; });
+
+    // Volume
+    els.volBtn.onclick = () => { setVolume(S.muted ? (S.volume || 1) : 0); S.muted = !S.muted; };
+    els.volBar.onclick = (e) => {
+      const r = els.volBar.getBoundingClientRect();
+      setVolume((e.clientX - r.left) / r.width);
+    };
+
+    // Mode switch
+    $$(".mp-mode-opt", els.modeSwitch).forEach(btn => {
+      btn.onclick = () => switchMode(btn.dataset.mode);
+    });
+
+    // Subtitles
+    els.subBtn.onclick = () => {
+      S.subtitlesOn = !S.subtitlesOn;
+      updateSubtitles();
+      updateMode();
+    };
+
+    // Panels
+    els.btnQueue.onclick = () => togglePanel("queue");
+    els.btnSpeed.onclick = () => togglePanel("speed");
+    els.btnTimer.onclick = () => togglePanel("timer");
+    els.btnShare.onclick = () => togglePanel("share");
+    $$(".mp-panel-close").forEach(btn => {
+      btn.onclick = () => {
+        const p = btn.dataset.panel;
+        els["panel" + p.charAt(0).toUpperCase() + p.slice(1)].classList.remove("open");
+        S.panelOpen = null;
+      };
+    });
+
+    // Download
+    els.dlBtn.onclick = () => {
+      const url = S.mode === "video" && S.mediaVideo ? S.mediaVideo : S.mediaUrl;
+      if (url) {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = S.title || "download";
+        a.target = "_blank";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    };
+
+    // Shuffle / repeat
+    let shuffleOn = false, repeatOn = false;
+    els.shuf.onclick = () => { shuffleOn = !shuffleOn; els.shuf.classList.toggle("active", shuffleOn); };
+    els.rep.onclick = () => { repeatOn = !repeatOn; els.rep.classList.toggle("active", repeatOn); };
+
+    // Audio/Video events
+    function onTimeUpdate() {
+      if (S.seekDragging) return;
+      const m = activeMedia();
+      S.currentTime = m.currentTime;
+      S.duration = m.duration || 0;
+      updateProgress();
+      // Subtitles
+      if (S.subtitlesOn && S.subtitlesCues.length) {
+        const cue = getCurrentCue(S.currentTime);
+        if (S.mode === "audio") {
+          els.expSubs.textContent = cue;
+        } else {
+          els.expVSubs.textContent = cue;
+        }
+      }
+    }
+    function onEnded() {
+      if (repeatOn) {
+        activeMedia().currentTime = 0;
+        playMedia();
+      } else {
+        skip(1);
+      }
+    }
+    audioEl.addEventListener("timeupdate", onTimeUpdate);
+    videoEl.addEventListener("timeupdate", onTimeUpdate);
+    audioEl.addEventListener("loadedmetadata", () => { S.duration = audioEl.duration; updateProgress(); });
+    videoEl.addEventListener("loadedmetadata", () => { S.duration = videoEl.duration; updateProgress(); });
+    audioEl.addEventListener("ended", onEnded);
+    videoEl.addEventListener("ended", onEnded);
+
+    // Keyboard
+    document.addEventListener("keydown", (e) => {
+      if (!els.mini.classList.contains("visible")) return;
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.code === "Space") { e.preventDefault(); togglePlay(); }
+      if (e.code === "ArrowRight") { const m = activeMedia(); m.currentTime = Math.min(m.duration, m.currentTime + 10); }
+      if (e.code === "ArrowLeft") { const m = activeMedia(); m.currentTime = Math.max(0, m.currentTime - 10); }
+      if (e.code === "ArrowUp") { e.preventDefault(); setVolume(S.volume + 0.1); }
+      if (e.code === "ArrowDown") { e.preventDefault(); setVolume(S.volume - 0.1); }
+    });
+  }
+
+  function skip(dir) {
+    if (!S.queue || !S.queue.length) return;
+    let next = S.queueIndex + dir;
+    if (next < 0) next = S.queue.length - 1;
+    if (next >= S.queue.length) next = 0;
+    playQueueItem(next);
+  }
+
+  /* ── Public API ────────────────────────────────────────── */
+  window.playEpisodeExpanded = function (mediaUrl, mediaVideo, initialMode, coverUrl, coverInfo, title, detailUrl, author, queue, text, subtitlesUrl, bgColor, allowDownload) {
+    if (!els.mini) { buildUI(); refs(); bindEvents(); }
+    loadEpisode(mediaUrl, mediaVideo, initialMode, coverUrl, coverInfo, title, detailUrl, author, queue, text, subtitlesUrl, bgColor, allowDownload);
+    playMedia();
+    expand();
   };
 
-  // --- Inicialización ---
-  window.addEventListener('load', () => {
-    const programa = window.PROGRAMA_DEL_DIA || { title: 'Programa del Día' };
-    document.querySelector('.full-width-btn span').textContent = programa.title;
-    loadState();
-    updatePlaylist();
-    updateLikes();
-    updateNextList();
-    updateRecomendadosList();
-    updateTextContent();
-    checkTitleOverflow();
-    checkMinimizedTitleOverflow();
-    updateOpenPlayerButton(!mediaElement.paused);
-    applyBgColor(); // Aplicar color por defecto
-  });
+  window.playEpisodeMini = function (mediaUrl, mediaVideo, initialMode, coverUrl, coverInfo, title, detailUrl, author, queue, text, subtitlesUrl, bgColor, allowDownload) {
+    if (!els.mini) { buildUI(); refs(); bindEvents(); }
+    loadEpisode(mediaUrl, mediaVideo, initialMode, coverUrl, coverInfo, title, detailUrl, author, queue, text, subtitlesUrl, bgColor, allowDownload);
+    playMedia();
+  };
+
+  /* ── Auto-init on DOM ready ────────────────────────────── */
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => { buildUI(); refs(); bindEvents(); });
+  } else {
+    buildUI(); refs(); bindEvents();
+  }
 })();
